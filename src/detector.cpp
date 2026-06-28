@@ -325,10 +325,10 @@ bool ChessboardDetector::detectChessboards(const cv::Mat &image, ChessboardDetec
     }
     else
     {
-      std::cerr << "CUDA device not available; detection skipped." << std::endl;
+      std::cerr << "[camera_chessboard_detector] CUDA acceleration requested but no CUDA device was found; returning no detection." << std::endl;
     }
 #else
-    std::cerr << "CUDA support not compiled; detection skipped." << std::endl;
+    std::cerr << "[camera_chessboard_detector] CUDA acceleration requested but this build has no CUDA support; returning no detection." << std::endl;
 #endif
   }
   else

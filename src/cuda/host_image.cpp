@@ -121,7 +121,6 @@ CpuKernel<T> CpuKernel<T>::geiger(int radius, float angle1, float angle2, int qu
       }
 
       kernel.set(radius - x, radius - y, value);
-      // kernel.set(x + radius, y + radius, value);
     }
   }
   for (int y = -radius; y <= radius; ++y) {

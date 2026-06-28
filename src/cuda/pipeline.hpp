@@ -18,19 +18,10 @@ using cuda::GpuKernelPtr;
 class CudaDetectorImpl;
 
 /**
- * @brief Generates a likelihood map for a given image
- * with four Geiger kernels.
- * Implemented using CUDA in such a way that it's possible to
- * easily run multiple instances in parallel with cudaStreams
- * TODO: implement streams
+ * @brief Generates a likelihood map for a given image using the four
+ * Geiger corner kernels.
  */
 class CudaLikelihoodEstimator {
-  // enum {
-  //   NUM_KERNELS = 4,
-  //   NUM_RADIUS = 3,
-  //   NUM_ANGLES = 2,
-  //   TOTAL_KERNELS = NUM_KERNELS * NUM_RADIUS * NUM_ANGLES
-  // };
   enum {
     NUM_KERNELS = 4,
   };
