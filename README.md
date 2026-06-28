@@ -81,7 +81,30 @@ on a synthetic board with known ground-truth corners. CUDA-dependent tests
 skip cleanly on a CPU-only build. To regenerate goldens after an intended
 behavioural change, run the test binary with `CCD_RECORD_GOLDEN=1`.
 
+## Credits
+
+This detector implements, and is a derivative work of, the growth-based
+checkerboard detection algorithm of Andreas Geiger et al. ("libcbdetect", KIT).
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the full upstream
+attribution and license notice. If you use this software in academic work,
+please cite:
+
+> A. Geiger, F. Moosmann, Ö. Car, B. Schuster.
+> "Automatic Camera and Range Sensor Calibration using a Single Shot."
+> IEEE International Conference on Robotics and Automation (ICRA), 2012.
+
+Upstream reference implementations:
+[cvlibs libcbdetect](https://www.cvlibs.net/software/libcbdetect/) (GPL) and
+the C++ port [ftdlyc/libcbdetect](https://github.com/ftdlyc/libcbdetect) (GPL-3.0).
+
 ## License
 
+Copyright (C) 2026 TIER IV, Inc.
+
 GPL-3.0-or-later. See [LICENSE](LICENSE).
+
+This project is a derivative of the GPL-licensed `libcbdetect` (GPL-3.0-or-later)
+and is therefore distributed under the same `GPL-3.0-or-later` terms, which are
+compatible with and preserve the upstream license. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
