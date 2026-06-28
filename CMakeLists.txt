@@ -112,3 +112,50 @@ if(CCD_BUILD_TESTS)
   target_compile_definitions(camera_chessboard_detector_benchmark PRIVATE
     CCD_SAMPLE_IMAGE="${CMAKE_CURRENT_SOURCE_DIR}/sample/chessboard_image.jpg")
 endif()
+
+# ---------------------------------------------------------------------------
+# Packaging.
+#
+# The library itself is pure CMake and does not depend on ROS 2. When it is
+# configured inside a ROS 2 / colcon (ament) workspace, ament_cmake is on the
+# prefix path: we then register the package with the ament index so that other
+# ROS 2 packages can find_package() it the usual way. Outside ROS 2,
+# ament_cmake is absent and we install a standalone CMake package config
+# instead. Both paths export the same camera_chessboard_detector:: target, so
+# downstream `find_package(camera_chessboard_detector)` works either way.
+# ---------------------------------------------------------------------------
+find_package(ament_cmake QUIET)
+
+if(ament_cmake_FOUND)
+  # ament_export_targets() performs the install(EXPORT ...) for this set
+  # internally, so it must NOT also be installed manually below.
+  ament_export_targets(camera_chessboard_detectorTargets HAS_LIBRARY_TARGET)
+  ament_export_dependencies(OpenCV Eigen3)
+  if(CCD_WITH_CUDA)
+    ament_export_dependencies(CUDAToolkit)
+  endif()
+  ament_package()
+else()
+  include(CMakePackageConfigHelpers)
+  set(CCD_INSTALL_CMAKEDIR ${CMAKE_INSTALL_LIBDIR}/cmake/camera_chessboard_detector)
+
+  install(EXPORT camera_chessboard_detectorTargets
+    FILE camera_chessboard_detectorTargets.cmake
+    NAMESPACE camera_chessboard_detector::
+    DESTINATION ${CCD_INSTALL_CMAKEDIR})
+
+  configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/camera_chessboard_detectorConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/camera_chessboard_detectorConfig.cmake
+    INSTALL_DESTINATION ${CCD_INSTALL_CMAKEDIR})
+
+  write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/camera_chessboard_detectorConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion)
+
+  install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/camera_chessboard_detectorConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/camera_chessboard_detectorConfigVersion.cmake
+    DESTINATION ${CCD_INSTALL_CMAKEDIR})
+endif()

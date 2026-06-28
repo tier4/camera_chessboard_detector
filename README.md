@@ -34,6 +34,21 @@ cmake --build build -j
 
 Per-stage timing is opt-in: add `-DCCD_PROFILE=ON`.
 
+### ROS 2 / colcon
+
+The library is pure CMake and never links against ROS. It is also shipped with
+a `package.xml`, so it can be dropped into a colcon workspace and built as an
+ament-packaged CMake library:
+
+```bash
+colcon build --packages-select camera_chessboard_detector
+```
+
+When `ament_cmake` is present (i.e. a ROS 2 environment is sourced) the build
+registers the package with the ament index and exports its dependencies; when
+it is absent, the same target is installed as a standalone CMake package. No
+flag is needed — the build detects which mode applies.
+
 ## Usage
 
 ```cpp
