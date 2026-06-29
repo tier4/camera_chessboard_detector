@@ -10,9 +10,9 @@ The output is identical across all three pipelines and all resolutions
 differs.
 
 > Status: numbers below are filled in per platform as they are measured.
-> Currently only the **desktop RTX 5080** column is populated. Jetson Orin
-> power modes (15 W / 30 W / 50 W / MAXN) and other desktop GPUs (RTX 30 /
-> 40) are placeholders to be filled in later with the same methodology.
+> Currently the **desktop RTX 5080** and **Jetson Orin AGX (all four power
+> modes)** columns are populated. Other desktop GPUs (RTX 30 / 40) are
+> placeholders to be filled in later with the same methodology.
 
 ## Methodology
 
@@ -107,43 +107,91 @@ Notes:
 
 ---
 
-## Platform: Jetson Orin AGX  *(to be measured)*
+## Platform: Jetson Orin AGX  *(all power modes measured)*
 
-Embedded ARM + Ampere `sm_87`; expect substantially higher numbers than
-the desktop above. Fill one column per power mode using the same presets.
+Embedded ARM + Ampere `sm_87`. The numbers below were measured at all four
+power modes — **MAXN** (`nvpmodel -m 0`), **50 W** (`nvpmodel -m 3`), **30 W**
+(`nvpmodel -m 2`) and **15 W** (`nvpmodel -m 1`) — each with `jetson_clocks`
+locking the CPU/GPU clocks.
 
-L4T / JetPack: _TBD_ · CUDA: _TBD_ · OpenCV: _TBD_
+| Component | Value |
+|---|---|
+| GPU | Jetson Orin AGX integrated Ampere (`sm_87`), shared LPDDR5 |
+| CPU | 12-core Arm Cortex-A78AE |
+| RAM | 64 GB (shared CPU/GPU) |
+| OS / toolchain | Ubuntu 22.04.5, L4T R36.4.0 (JetPack 6.1), CUDA 12.6, OpenCV 4.5.4, GCC 11.4.0, Release build |
+| Board | Connect Tech Forge carrier + Orin AGX |
+| CUDA arch | `sm_87` (`-DCMAKE_CUDA_ARCHITECTURES=87` — CMake 3.22 on JetPack can't resolve `native`) |
+| Clocks | `jetson_clocks`-locked — MAXN: CPU 2.2 GHz / GPU 1.3 GHz; 50 W: CPU 1.5 GHz / GPU 816 MHz; 30 W: CPU 1.7 GHz / GPU 612 MHz (8 of 12 CPU cores online); 15 W: CPU 1.1 GHz / GPU 408 MHz (4 of 12 CPU cores online) |
 
 ### Wall-clock by resolution — CUDA dense (warm avg)
 
 | preset | resolution | MP | 15 W | 30 W | 50 W | MAXN |
 |---|---:|---:|---:|---:|---:|---:|
-| VGA | 640×360   | 0.23 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| SD  | 720×405   | 0.29 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| HD  | 1280×720  | 0.92 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| FHD | 1920×1080 | 2.07 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| 4K  | 3840×2160 | 8.29 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+| VGA | 640×360   | 0.23 |   81.8 ms |  46.8 ms |  35.1 ms |  23.7 ms |
+| SD  | 720×405   | 0.29 |   93.5 ms |  51.8 ms |  37.0 ms |  25.0 ms |
+| HD  | 1280×720  | 0.92 |  225.8 ms | 118.3 ms |  64.2 ms |  44.6 ms |
+| FHD | 1920×1080 | 2.07 |  461.4 ms | 238.2 ms | 111.2 ms |  77.6 ms |
+| 4K  | 3840×2160 | 8.29 | 1742.7 ms | 880.4 ms | 367.3 ms | 258.5 ms |
 
 ### Wall-clock by resolution — CUDA sep r=1 (warm avg)
 
 | preset | resolution | MP | 15 W | 30 W | 50 W | MAXN |
 |---|---:|---:|---:|---:|---:|---:|
-| VGA | 640×360   | 0.23 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| SD  | 720×405   | 0.29 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| HD  | 1280×720  | 0.92 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| FHD | 1920×1080 | 2.07 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| 4K  | 3840×2160 | 8.29 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+| VGA | 640×360   | 0.23 |  47.4 ms |  29.7 ms |  28.5 ms | 19.5 ms |
+| SD  | 720×405   | 0.29 |  51.3 ms |  30.7 ms |  29.2 ms | 20.1 ms |
+| HD  | 1280×720  | 0.92 |  78.7 ms |  45.0 ms |  35.6 ms | 25.0 ms |
+| FHD | 1920×1080 | 2.07 | 130.7 ms |  72.5 ms |  47.1 ms | 33.6 ms |
+| 4K  | 3840×2160 | 8.29 | 406.2 ms | 212.7 ms | 108.7 ms | 79.8 ms |
 
-### Per-stage breakdown — 4K, MAXN (CUDA dense)
+All three pipelines detect the same 48 corners at every preset. The CPU
+baseline (same methodology), VGA → 4K, is 297 / 347 / 943 / 1935 / 7166 ms
+(MAXN), 379 / 437 / 1180 / 2420 / 8938 ms (30 W), 433 / 498 / 1341 / 2756 /
+10141 ms (50 W) and 613 / 674 / 1818 / 3768 / 13706 ms (15 W) — note the
+**30 W CPU is faster than 50 W**, because its single-core clock is higher
+(1.7 vs 1.5 GHz) and the CPU front end is single-thread-bound; 15 W is slowest
+on both CPU and GPU (lowest clocks of all modes). CUDA dense is ~7–28× faster
+than the CPU and rank-1 separable ~13–93×; the GPU is throttled harder than the
+CPU at the lower power caps, so the speed-up shrinks at 15 / 30 W. As on the
+desktop, the separable map-gen is fastest at every resolution because it cuts
+the dominant Geiger map-gen stage. Switching power modes needs
+`sudo nvpmodel -m <id>` (see `nvpmodel -q` for the id map).
 
-| stage | value |
-|---|---:|
-| host preprocess           | _TBD_ |
-| input upload              | _TBD_ |
-| Geiger map-gen            | _TBD_ |
-| NMS / refine / score+prune | _TBD_ |
-| structure recovery (host) | _TBD_ |
-| **total wall**            | _TBD_ |
+### Per-stage breakdown — 4K (3840×2160), CUDA dense (MAXN vs 50 W vs 30 W vs 15 W)
+
+Per-stage numbers come from the profiling build (`-DCCD_PROFILE=ON`), N = 1;
+treat them as the per-stage *shares*.
+
+| stage | MAXN | 50 W | 30 W | 15 W |
+|---|---:|---:|---:|---:|
+| preprocess (GPU: BGR2GRAY + blur + normalize, incl. upload) | 5.6 ms | 6.9 ms | 11.2 ms | 20.2 ms |
+| Geiger map-gen                                         | 231.6 ms | 331.0 ms | 837.3 ms | 1665.4 ms |
+| NMS (GPU)                                              | 1.8 ms | 2.2 ms | 4.0 ms | 7.6 ms |
+| refine (GPU)                                           | 2.6 ms | 3.7 ms | 5.9 ms | 10.1 ms |
+| score + prune (GPU + host)                            | 1.1 ms | 1.4 ms | 2.6 ms | 4.9 ms |
+| structure recovery (host)                             | 15.1 ms | 22.3 ms | 19.4 ms | 30.5 ms |
+| **total wall**                                        | **258.0 ms** | **367.6 ms** | **880.5 ms** | **1739.0 ms** |
+
+Notes:
+- As on the desktop, **Geiger map-gen dominates** the GPU pipeline at 4K
+  (~232 ms at MAXN, ~331 ms at 50 W, ~837 ms at 30 W, ~1665 ms at 15 W); NMS,
+  refine and score/prune stay on-GPU and ≤11 ms even at 15 W.
+- The host **structure recovery is resolution-independent** (~15 ms at MAXN,
+  ~22 ms at 50 W, ~19 ms at 30 W, ~30 ms at 15 W) — it scales with the corner
+  count (48 here), not the image size. The single-thread Cortex-A78AE makes it
+  ~3–7× the desktop's 4.4 ms, so at low resolution it dominates the CUDA
+  wall-clock (e.g. MAXN VGA: 15 ms of the 23.7 ms dense total).
+- **Power modes are not monotonic across CPU and GPU.** The GPU clock drops
+  with the power cap (1.3 GHz MAXN → 816 MHz 50 W → 612 MHz 30 W → 408 MHz
+  15 W), so 4K dense rises monotonically 258 → 367 → 880 → 1743 ms (the GPU is
+  throttled harder than the cap alone suggests — 30 W is ~2.4× slower than 50 W
+  on the memory-bound map-gen). The **CPU is *not* monotonic with the power
+  number**: by 4K CPU baseline the fastest→slowest order is MAXN (7166) → 30 W
+  (8938) → 50 W (10141) → 15 W (13706), tracking the locked single-core clock
+  (2.2 / 1.7 / 1.5 / 1.1 GHz) — so 30 W beats 50 W. The host structure recovery
+  follows the same CPU-clock order (15 / 19 / 22 / 30 ms).
+- vs desktop RTX 5080: the integrated Ampere is ~8× slower at 4K dense at MAXN
+  (258 vs 32 ms), ~27× at 30 W (880 ms) and ~54× at 15 W (1743 ms).
 
 ---
 
