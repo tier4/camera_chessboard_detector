@@ -1,9 +1,9 @@
 # camera_chessboard_detector
 
 A growth-based ("Geiger" / ROCHADE-style) chessboard corner detector. It
-recovers partially visible and strongly distorted boards (e.g. fisheye)
-where OpenCV's `findChessboardCorners` fails outright. Detection only — no
-pose estimation.
+recovers partially visible and strongly distorted boards (e.g. fisheye), with
+an optional CUDA pipeline for fast, GPU-accelerated detection. Detection only —
+no pose estimation.
 
 ## Features
 

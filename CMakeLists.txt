@@ -4,8 +4,9 @@ project(camera_chessboard_detector VERSION 0.1.0 LANGUAGES CXX)
 # ---------------------------------------------------------------------------
 # camera_chessboard_detector — growth-based (Geiger-style) chessboard corner detector.
 #
-# Recovers partially visible and strongly distorted (e.g. fisheye) boards
-# where OpenCV's findChessboardCorners gives up. Detection only; no pose.
+# Recovers partially visible and strongly distorted (e.g. fisheye) boards,
+# with an optional CUDA pipeline for fast GPU-accelerated detection.
+# Detection only; no pose.
 #
 # A CPU pipeline is always built. A CUDA pipeline is added automatically
 # when a CUDA compiler is available; no source change is needed to switch

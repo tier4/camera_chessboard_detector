@@ -5,10 +5,11 @@
   <version>0.1.0</version>
   <description>
     Growth-based (Geiger / ROCHADE-style) chessboard corner detector that
-    recovers partially visible and strongly distorted (e.g. fisheye) boards.
-    The library itself is pure CMake and has no ROS 2 dependency; this
-    package.xml only lets it be discovered, built, and exported inside a
-    colcon / ament workspace.
+    recovers partially visible and strongly distorted (e.g. fisheye) boards,
+    with an optional CUDA pipeline for fast GPU-accelerated detection. The
+    library itself is pure CMake and has no ROS 2 dependency; this package.xml
+    only lets it be discovered, built, and exported inside a colcon / ament
+    workspace.
   </description>
 
   <!-- TODO: replace with the real maintainer before publishing. -->
