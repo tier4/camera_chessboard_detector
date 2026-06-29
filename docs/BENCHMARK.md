@@ -30,7 +30,7 @@ differs.
 
 ---
 
-## Platform: desktop RTX 5080  *(measured)*
+## Platform: desktop RTX 5080
 
 | Component | Value |
 |---|---|
@@ -74,19 +74,6 @@ wall-clock table above; treat them as the per-stage *shares*.
 | structure recovery (host)                             | 4.4 ms | 4.4 ms | 4.4 ms |
 | **total wall**                                        | **2153 ms** | **32.0 ms** | **16.6 ms** |
 
-### Per-stage breakdown — SD (720×405)
-
-| stage | CPU | CUDA dense | CUDA sep r=1 |
-|---|---:|---:|---:|
-| preprocess (GPU, incl. upload) | — | 0.16 ms | 0.14 ms |
-| Geiger map-gen          | (in corner detect) | 1.4 ms | 0.63 ms |
-| NMS (GPU)               | — | 0.04 ms | 0.04 ms |
-| refine (GPU)            | — | 0.80 ms | 0.80 ms |
-| score + prune           | — | 0.09 ms | 0.09 ms |
-| corner detect (CPU)     | 94 ms | — | — |
-| structure recovery (host) | 4.3 ms | 4.3 ms | 4.3 ms |
-| **total wall**          | **98 ms** | **6.8 ms** | **6.0 ms** |
-
 Notes:
 - The CPU front end is only instrumented at two points (the whole corner
   detect, and the structure-recovery tail); its cost is dominated by the
@@ -107,7 +94,7 @@ Notes:
 
 ---
 
-## Platform: Jetson Orin AGX  *(all power modes measured)*
+## Platform: Jetson Orin AGX
 
 Embedded ARM + Ampere `sm_87`. The numbers below were measured at all four
 power modes — **MAXN** (`nvpmodel -m 0`), **50 W** (`nvpmodel -m 3`), **30 W**
