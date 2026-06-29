@@ -12,7 +12,6 @@
     workspace.
   </description>
 
-  <!-- TODO: replace with the real maintainer before publishing. -->
   <maintainer email="kosuke.tokuda.2@tier4.jp">camera_chessboard_detector maintainers</maintainer>
   <license>GPL-3.0-or-later</license>
 
