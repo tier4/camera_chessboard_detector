@@ -25,6 +25,20 @@ pose estimation.
   `-DCMAKE_CUDA_ARCHITECTURES=<arch>`). Without it, the package builds
   CPU-only with no source change.
 
+New to CUDA? See [docs/CUDA_INSTALL.md](docs/CUDA_INSTALL.md) for a step-by-step
+toolkit/driver install (Ubuntu and Jetson) and how to confirm the GPU pipeline
+is picked up.
+
+> [!TIP]
+> **Jetson only:** Jetson boards default to a power-saving mode. For full speed
+> (and reproducible benchmark numbers) set the power mode and lock the clocks
+> before measuring:
+>
+> ```bash
+> sudo nvpmodel -m 0     # 0 is usually MAXN / max performance; check `nvpmodel -q`
+> sudo jetson_clocks
+> ```
+
 ## Build
 
 ```bash
