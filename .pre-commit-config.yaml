@@ -1,0 +1,31 @@
+# Pre-commit hooks for camera_chessboard_detector.
+#
+#   pip install pre-commit        # or: pipx install pre-commit
+#   pre-commit install            # run clang-format automatically on `git commit`
+#   pre-commit run --all-files    # format the whole tree now
+#
+# Requires the LLVM 18 tools on PATH: `clang-format`, `clang-tidy-18`.
+#
+# clang-tidy is a manual-stage hook because it needs a compile database and is
+# slow. Generate the database once, then run it on demand:
+#
+#   cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+#   pre-commit run clang-tidy --all-files --hook-stage manual
+#
+# See docs/CLANG_FORMAT.md for the conventions and the CUDA (.cu) caveat.
+repos:
+  - repo: local
+    hooks:
+      - id: clang-format
+        name: clang-format
+        entry: clang-format -i
+        language: system
+        files: ^(src|include|test)/.*\.(cpp|hpp|cu|cuh)$
+
+      - id: clang-tidy
+        name: clang-tidy (identifier naming)
+        entry: clang-tidy-18 -p build --header-filter=camera_chessboard_detector/(src|include)/
+        language: system
+        files: ^(src|test)/.*\.cpp$
+        stages: [manual]
+        require_serial: true

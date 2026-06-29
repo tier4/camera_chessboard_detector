@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>camera_chessboard_detector</name>
+  <version>0.1.0</version>
+  <description>
+    Growth-based (Geiger / ROCHADE-style) chessboard corner detector that
+    recovers partially visible and strongly distorted (e.g. fisheye) boards,
+    with an optional CUDA pipeline for fast GPU-accelerated detection. The
+    library itself is pure CMake and has no ROS 2 dependency; this package.xml
+    only lets it be discovered, built, and exported inside a colcon / ament
+    workspace.
+  </description>
+
+  <maintainer email="kosuke.tokuda.2@tier4.jp">camera_chessboard_detector maintainers</maintainer>
+  <license>GPL-3.0-or-later</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>eigen</depend>
+  <depend>libopencv-dev</depend>
+
+  <!-- CUDA is optional and auto-detected from the build host. It has no
+       portable rosdep key, so it is intentionally not declared here. -->
+
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
