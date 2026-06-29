@@ -45,8 +45,8 @@ find src include test \( -name '*.cpp' -o -name '*.hpp' -o -name '*.cu' -o -name
 
 | Kind | Style | Example |
 | --- | --- | --- |
-| types / enums / type aliases | `CamelCase` | `CornerArray`, `RealT` |
-| enum constants | `CamelCase` | `CudaSeparable` |
+| types / enum types / type aliases | `CamelCase` | `CornerArray`, `RefineType`, `RealT` |
+| enum constants | `UPPER_CASE` (SCREAMING_SNAKE) | `CUDA_SEPARABLE`, `REFINE_ALL` |
 | methods / functions | `camelBack` | `detectChessboards`, `toMat` |
 | variables / parameters / local constants | `lower_case` | `kernel_size`, `rows_left` |
 | namespaces | `lower_case` | `camera_chessboard_detector` |
