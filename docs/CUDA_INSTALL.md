@@ -278,9 +278,29 @@ cmake --build build -j
 ./build/camera_chessboard_detector_benchmark sample/chessboard_image.jpg 10
 ```
 
-By default the build targets **your machine's own GPU** (`CMAKE_CUDA_ARCHITECTURES=native`).
-If you are **cross-compiling** for a different GPU (for example building on a
-desktop to deploy on a Jetson), set the target architecture explicitly:
+By default the build targets **your machine's own GPU**, so when you build and
+run on the *same* machine — including **on a Jetson** — you do **not** need to
+pass any architecture flag. Just build:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+```
+
+Under the hood, the architecture is detected for you: on CMake ≥ 3.24 this is
+`CMAKE_CUDA_ARCHITECTURES=native`; on the older CMake 3.22 that ships with
+JetPack (which does not understand `native`), the build instead asks `nvcc`'s
+bundled `__nvcc_device_query` helper for the host GPU. Either way a Jetson Orin
+resolves to `sm_87` on its own, regardless of Jetson generation. You will see
+the chosen value echoed during configure:
+
+```
+-- camera_chessboard_detector: CUDA pipeline enabled (CMAKE_CUDA_ARCHITECTURES=87)
+```
+
+You only need to set the architecture **explicitly** when **cross-compiling**
+for a GPU other than the build host (for example building on a desktop to deploy
+on a Jetson), or if the auto-detection cannot find a GPU:
 
 ```bash
 # Jetson Orin (Ampere) is sm_87:

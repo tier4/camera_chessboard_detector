@@ -108,7 +108,7 @@ locking the CPU/GPU clocks.
 | RAM | 64 GB (shared CPU/GPU) |
 | OS / toolchain | Ubuntu 22.04.5, L4T R36.4.0 (JetPack 6.1), CUDA 12.6, OpenCV 4.5.4, GCC 11.4.0, Release build |
 | Board | Connect Tech Forge carrier + Orin AGX |
-| CUDA arch | `sm_87` (`-DCMAKE_CUDA_ARCHITECTURES=87` — CMake 3.22 on JetPack can't resolve `native`) |
+| CUDA arch | `sm_87` — auto-detected on Jetson (JetPack's CMake 3.22 can't resolve `native`, so the build queries `nvcc` instead); equivalently `-DCMAKE_CUDA_ARCHITECTURES=87` |
 | Clocks | `jetson_clocks`-locked — MAXN: CPU 2.2 GHz / GPU 1.3 GHz; 50 W: CPU 1.5 GHz / GPU 816 MHz; 30 W: CPU 1.7 GHz / GPU 612 MHz (8 of 12 CPU cores online); 15 W: CPU 1.1 GHz / GPU 408 MHz (4 of 12 CPU cores online) |
 
 ### Wall-clock by resolution — CUDA dense (warm avg)

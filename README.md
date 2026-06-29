@@ -21,9 +21,10 @@ no pose estimation.
 - **OpenCV** (`core`, `imgproc`, `calib3d`, `imgcodecs`) — required.
 - **Eigen3** — required.
 - **CUDA toolkit** — optional. With it, the GPU pipeline is built (default
-  architecture is the build host's GPU; override with
-  `-DCMAKE_CUDA_ARCHITECTURES=<arch>`). Without it, the package builds
-  CPU-only with no source change.
+  architecture is the build host's GPU, auto-detected — **including on Jetson**,
+  where no flag is needed even on JetPack's CMake 3.22; override with
+  `-DCMAKE_CUDA_ARCHITECTURES=<arch>` only to cross-compile). Without it, the
+  package builds CPU-only with no source change.
 
 New to CUDA? See [docs/CUDA_INSTALL.md](docs/CUDA_INSTALL.md) for a step-by-step
 toolkit/driver install (Ubuntu and Jetson) and how to confirm the GPU pipeline
