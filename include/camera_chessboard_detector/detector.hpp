@@ -17,13 +17,13 @@
 #ifndef CCD__CHESSBOARD_DETECTOR_HPP
 #define CCD__CHESSBOARD_DETECTOR_HPP
 
-#include <cstdint>
-#include <memory>
-#include <vector>
+#include "camera_chessboard_detector/types.hpp"
 
 #include <opencv2/core.hpp>
 
-#include "camera_chessboard_detector/types.hpp"
+#include <cstdint>
+#include <memory>
+#include <vector>
 
 // Public detector API. The growth-based (Geiger-style) corner detection and
 // board structure-recovery algorithm lives in src/; this header declares only
@@ -31,8 +31,7 @@
 namespace camera_chessboard_detector
 {
 
-enum class ChessboardAccelerationMode
-{
+enum class ChessboardAccelerationMode {
   CPU,
   CUDA,
   // Opt-in separable Geiger map-gen path: each non-separable 2D sub-kernel
@@ -75,8 +74,10 @@ struct ChessboardDetection
 class ChessboardDetector
 {
 public:
-  ChessboardDetector(const ChessboardModel &model,
-                     const ChessboardDetectorConfig &config = ChessboardDetectorConfig());
+  ChessboardDetector(
+    const ChessboardModel &model,
+    const ChessboardDetectorConfig &config = ChessboardDetectorConfig()
+  );
 
   void setBoardModel(const ChessboardModel &model);
   void setConfig(const ChessboardDetectorConfig &config);
@@ -84,15 +85,12 @@ public:
   bool detectChessboards(const cv::Mat &image, ChessboardDetection &detection_out);
   bool detectChessboard(const cv::Mat &image, Chessboard2d &board_out);
 
-  void drawChessboardCorners(cv::Mat &image,
-                             const Chessboard2d &board,
-                             bool draw_index = false) const;
+  void drawChessboardCorners(cv::Mat &image, const Chessboard2d &board, bool draw_index = false)
+    const;
 
 private:
-  bool detectChessboardsCpu(const cv::Mat &image,
-                            Chessboard2dList &boards_out) const;
-  bool detectChessboardsCuda(const cv::Mat &image,
-                             Chessboard2dList &boards_out) const;
+  bool detectChessboardsCpu(const cv::Mat &image, Chessboard2dList &boards_out) const;
+  bool detectChessboardsCuda(const cv::Mat &image, Chessboard2dList &boards_out) const;
 
   ChessboardModel board_model_{};
   ChessboardDetectorConfig config_{};

@@ -23,19 +23,22 @@
 #include <cstdio>
 
 // Abort with a CUDA error message if `err` is not cudaSuccess.
-#define NVCHK(err)                                                             \
-  if (err != cudaSuccess) {                                                    \
-    fprintf(stderr, "CUDA error: %s\n", cudaGetErrorString(err));              \
-    assert(false);                                                             \
+#define NVCHK(err)                                                \
+  if (err != cudaSuccess)                                         \
+  {                                                               \
+    fprintf(stderr, "CUDA error: %s\n", cudaGetErrorString(err)); \
+    assert(false);                                                \
   }
 
-namespace camera_chessboard_detector {
+namespace camera_chessboard_detector
+{
 
-namespace cuda {
-
+namespace cuda
+{
 
 template <typename T>
-class GpuImage {
+class GpuImage
+{
 public:
   GpuImage();
   GpuImage(int width, int height);
@@ -60,6 +63,7 @@ public:
   void upload(const CpuImage<T> &other);
   void upload(const T *data, std::size_t size);
   static GpuImage<T> from_cpu(const CpuImage<T> &other);
+
 private:
   bool initialized_;
   int width_;
@@ -68,7 +72,8 @@ private:
 };
 
 template <typename T>
-class GpuKernel : public GpuImage<T> {
+class GpuKernel : public GpuImage<T>
+{
 public:
   GpuKernel(int radius);
   GpuKernel(const CpuKernel<T> &other);
@@ -80,6 +85,6 @@ typedef std::shared_ptr<GpuImageF32> GpuImagePtr;
 typedef GpuKernel<float> GpuKernelF32;
 typedef std::shared_ptr<GpuKernelF32> GpuKernelPtr;
 
-} // namespace cuda
+}  // namespace cuda
 
-} // namespace camera_chessboard_detector
+}  // namespace camera_chessboard_detector

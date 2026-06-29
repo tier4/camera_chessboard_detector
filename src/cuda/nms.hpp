@@ -19,8 +19,10 @@
 #include "core.hpp"
 #include "cuda/gpu_buffers.hpp"
 
-namespace camera_chessboard_detector {
-namespace cuda {
+namespace camera_chessboard_detector
+{
+namespace cuda
+{
 
 // On-GPU non-maximum suppression for the Geiger likelihood map.
 //
@@ -40,7 +42,8 @@ namespace cuda {
 // placeholder edge fields (`edge1_cos=2.0`, `edge1_sin=0.0`,
 // `edge2_cos=2.0`, `edge2_sin=0.0`) that the downstream refiner
 // expects — the same contract the host implementation provides.
-class CudaNonMaxSuppression {
+class CudaNonMaxSuppression
+{
 public:
   // Default capacity for the compact device array. The likelihood map
   // at NMS R ~= 4 typically yields a few hundred candidates on the
@@ -52,17 +55,18 @@ public:
   ~CudaNonMaxSuppression();
 
   CudaNonMaxSuppression(const CudaNonMaxSuppression &) = delete;
-  CudaNonMaxSuppression & operator=(const CudaNonMaxSuppression &) = delete;
+  CudaNonMaxSuppression &operator=(const CudaNonMaxSuppression &) = delete;
   CudaNonMaxSuppression(CudaNonMaxSuppression &&) = delete;
-  CudaNonMaxSuppression & operator=(CudaNonMaxSuppression &&) = delete;
+  CudaNonMaxSuppression &operator=(CudaNonMaxSuppression &&) = delete;
 
   // Run NMS on `likelihood_map`. `corners` is cleared and refilled.
   // Returns the number of candidates emitted on the device; if this
   // equals the current capacity, the device buffer overflowed and some
   // candidates were lost (the host output is still consistent — only
   // the first `capacity` are returned).
-  std::size_t run(const GpuImagePtr & likelihood_map, int radius,
-                  int margin, float threshold, CornerArray & corners);
+  std::size_t run(
+    const GpuImagePtr &likelihood_map, int radius, int margin, float threshold, CornerArray &corners
+  );
 
   std::size_t capacity() const noexcept { return capacity_; }
 
@@ -70,10 +74,10 @@ private:
   // Grow the device buffers to at least `min_capacity` slots.
   void ensureCapacity(std::size_t min_capacity);
 
-  int * d_out_x_{nullptr};
-  int * d_out_y_{nullptr};
-  float * d_out_v_{nullptr};
-  int * d_count_{nullptr};
+  int *d_out_x_{nullptr};
+  int *d_out_y_{nullptr};
+  float *d_out_v_{nullptr};
+  int *d_count_{nullptr};
   std::size_t capacity_{0};
 };
 

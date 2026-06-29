@@ -16,26 +16,26 @@
 
 #include "camera_chessboard_detector/detector.hpp"
 
+#include "core.hpp"  // CornerArray + board structure recovery
+#include "cpu/corner_detector.hpp"
+
+#include <opencv2/calib3d.hpp>
+#include <opencv2/imgproc.hpp>
+
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
-#include <cmath>
 #include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <opencv2/calib3d.hpp>
-#include <opencv2/imgproc.hpp>
-
-#include "cpu/corner_detector.hpp"
-#include "core.hpp"  // CornerArray + board structure recovery
-
 #ifdef CUDA_ENABLED
-#include <cuda_runtime.h>
-
 #include "cuda/pipeline.hpp"
+
+#include <cuda_runtime.h>
 #endif
 
 namespace camera_chessboard_detector
@@ -43,8 +43,8 @@ namespace camera_chessboard_detector
 namespace
 {
 
-  // Near-duplicate corner merge distance.
-  constexpr float  kDedupPx    = 1.0f;  // merge corners closer than this (px)
+// Near-duplicate corner merge distance.
+constexpr float kDedupPx = 1.0f;  // merge corners closer than this (px)
 
 // Convert the CPU front end's AoS corner candidates (p / v1 / v2 / score)
 // to the SoA CornerArray consumed by structure recovery. v1 / v2 are the
@@ -85,14 +85,23 @@ CornerArray dedupNearbyCorners(const CornerArray &s, float min_sep_px)
   std::vector<char> drop(m, 0);
   for (std::size_t i = 0; i < m; ++i)
   {
-    if (drop[i]) { continue; }
+    if (drop[i])
+    {
+      continue;
+    }
     for (std::size_t j = i + 1; j < m; ++j)
     {
-      if (drop[j]) { continue; }
-      if (std::abs(s.x[i] - s.x[j]) < min_sep_px &&
-          std::abs(s.y[i] - s.y[j]) < min_sep_px)
+      if (drop[j])
       {
-        if (s.score[j] > s.score[i]) { drop[i] = 1; break; }
+        continue;
+      }
+      if (std::abs(s.x[i] - s.x[j]) < min_sep_px && std::abs(s.y[i] - s.y[j]) < min_sep_px)
+      {
+        if (s.score[j] > s.score[i])
+        {
+          drop[i] = 1;
+          break;
+        }
         drop[j] = 1;
       }
     }
@@ -100,7 +109,10 @@ CornerArray dedupNearbyCorners(const CornerArray &s, float min_sep_px)
   camera_chessboard_detector::CornerArray d;
   for (std::size_t i = 0; i < m; ++i)
   {
-    if (drop[i]) { continue; }
+    if (drop[i])
+    {
+      continue;
+    }
     d.x.push_back(s.x[i]);
     d.y.push_back(s.y[i]);
     d.v.push_back(0.0f);
@@ -130,25 +142,19 @@ void dumpCornerDiag(const char *tag, const CornerArray &s)
       }
     }
   }
-  std::cerr << "[ccd] " << tag << " N=" << n
-            << " near-dup-pts(<1px)=" << dup_pts << std::endl;
+  std::cerr << "[ccd] " << tag << " N=" << n << " near-dup-pts(<1px)=" << dup_pts << std::endl;
   for (std::size_t i = 0; i < n && i < 6; ++i)
   {
-    std::cerr << "  c" << i << " p=(" << s.x[i] << "," << s.y[i] << ")"
-              << " e1=(" << s.edge1_cos[i] << "," << s.edge1_sin[i] << ")|n|="
-              << std::hypot(s.edge1_cos[i], s.edge1_sin[i])
-              << " e2=(" << s.edge2_cos[i] << "," << s.edge2_sin[i] << ")|n|="
-              << std::hypot(s.edge2_cos[i], s.edge2_sin[i]) << std::endl;
+    std::cerr << "  c" << i << " p=(" << s.x[i] << "," << s.y[i] << ")" << " e1=(" << s.edge1_cos[i]
+              << "," << s.edge1_sin[i] << ")|n|=" << std::hypot(s.edge1_cos[i], s.edge1_sin[i])
+              << " e2=(" << s.edge2_cos[i] << "," << s.edge2_sin[i]
+              << ")|n|=" << std::hypot(s.edge2_cos[i], s.edge2_sin[i]) << std::endl;
   }
 }
 
-bool modelHasSize(const ChessboardModel &model)
-{
-  return model.rows > 0 && model.cols > 0;
-}
+bool modelHasSize(const ChessboardModel &model) { return model.rows > 0 && model.cols > 0; }
 
-bool sizeMatchesModel(const cv::Mat &checkerboard,
-                      const ChessboardModel &model)
+bool sizeMatchesModel(const cv::Mat &checkerboard, const ChessboardModel &model)
 {
   if (!modelHasSize(model))
   {
@@ -162,12 +168,10 @@ bool sizeMatchesModel(const cv::Mat &checkerboard,
   }
   const int model_rows = static_cast<int>(model.rows);
   const int model_cols = static_cast<int>(model.cols);
-  return (rows == model_rows && cols == model_cols) ||
-         (rows == model_cols && cols == model_rows);
+  return (rows == model_rows && cols == model_cols) || (rows == model_cols && cols == model_rows);
 }
 
-bool reorderDetectedCorners(std::vector<cv::Point2f> &corners,
-                            const ChessboardModel &model)
+bool reorderDetectedCorners(std::vector<cv::Point2f> &corners, const ChessboardModel &model)
 {
   if (!modelHasSize(model))
   {
@@ -197,10 +201,12 @@ bool reorderDetectedCorners(std::vector<cv::Point2f> &corners,
   {
     row_indices[row] = row;
   }
-  std::sort(row_indices.begin(), row_indices.end(),
-            [&row_sorted, cols](std::size_t lhs, std::size_t rhs) {
-              return row_sorted[lhs * cols].y < row_sorted[rhs * cols].y;
-            });
+  std::sort(
+    row_indices.begin(), row_indices.end(),
+    [&row_sorted, cols](std::size_t lhs, std::size_t rhs) {
+      return row_sorted[lhs * cols].y < row_sorted[rhs * cols].y;
+    }
+  );
 
   std::vector<cv::Point2f> reordered;
   reordered.reserve(corners.size());
@@ -217,10 +223,10 @@ bool reorderDetectedCorners(std::vector<cv::Point2f> &corners,
 }
 
 template <typename CornerAccessor>
-bool buildOrderedCorners(const cv::Mat &checkerboard,
-                         std::size_t corner_count,
-                         const CornerAccessor &corner_at,
-                         std::vector<cv::Point2f> &ordered)
+bool buildOrderedCorners(
+  const cv::Mat &checkerboard, std::size_t corner_count, const CornerAccessor &corner_at,
+  std::vector<cv::Point2f> &ordered
+)
 {
   if (checkerboard.empty())
   {
@@ -297,17 +303,14 @@ void ChessboardDetection::clear()
   has_boards = false;
 }
 
-ChessboardDetector::ChessboardDetector(const ChessboardModel &model,
-                                       const ChessboardDetectorConfig &config)
-    : board_model_(model),
-      config_(config)
+ChessboardDetector::ChessboardDetector(
+  const ChessboardModel &model, const ChessboardDetectorConfig &config
+)
+: board_model_(model), config_(config)
 {
 }
 
-void ChessboardDetector::setBoardModel(const ChessboardModel &model)
-{
-  board_model_ = model;
-}
+void ChessboardDetector::setBoardModel(const ChessboardModel &model) { board_model_ = model; }
 
 void ChessboardDetector::setConfig(const ChessboardDetectorConfig &config)
 {
@@ -341,10 +344,14 @@ bool ChessboardDetector::detectChessboards(const cv::Mat &image, ChessboardDetec
     }
     else
     {
-      std::cerr << "[camera_chessboard_detector] CUDA acceleration requested but no CUDA device was found; returning no detection." << std::endl;
+      std::cerr << "[camera_chessboard_detector] CUDA acceleration requested but no CUDA device "
+                   "was found; returning no detection."
+                << std::endl;
     }
 #else
-    std::cerr << "[camera_chessboard_detector] CUDA acceleration requested but this build has no CUDA support; returning no detection." << std::endl;
+    std::cerr << "[camera_chessboard_detector] CUDA acceleration requested but this build has no "
+                 "CUDA support; returning no detection."
+              << std::endl;
 #endif
   }
   else
@@ -370,8 +377,7 @@ bool ChessboardDetector::detectChessboards(const cv::Mat &image, ChessboardDetec
   return detection_out.has_boards;
 }
 
-bool ChessboardDetector::detectChessboard(const cv::Mat &image,
-                                          Chessboard2d &board_out)
+bool ChessboardDetector::detectChessboard(const cv::Mat &image, Chessboard2d &board_out)
 {
   ChessboardDetection detection;
   if (!detectChessboards(image, detection))
@@ -386,9 +392,9 @@ bool ChessboardDetector::detectChessboard(const cv::Mat &image,
   return true;
 }
 
-void ChessboardDetector::drawChessboardCorners(cv::Mat &image,
-                                               const Chessboard2d &board,
-                                               bool draw_index) const
+void ChessboardDetector::drawChessboardCorners(
+  cv::Mat &image, const Chessboard2d &board, bool draw_index
+) const
 {
   std::vector<cv::Point2f> corners;
   toCvPoints(board, corners);
@@ -398,16 +404,15 @@ void ChessboardDetector::drawChessboardCorners(cv::Mat &image,
   }
 
   const bool has_model = modelHasSize(board.model);
-  const bool size_matches = has_model &&
-                            corners.size() == static_cast<std::size_t>(board.model.rows * board.model.cols);
+  const bool size_matches =
+    has_model && corners.size() == static_cast<std::size_t>(board.model.rows * board.model.cols);
 
   if (size_matches)
   {
-    cv::drawChessboardCorners(image,
-                              cv::Size(static_cast<int>(board.model.cols),
-                                       static_cast<int>(board.model.rows)),
-                              corners,
-                              true);
+    cv::drawChessboardCorners(
+      image, cv::Size(static_cast<int>(board.model.cols), static_cast<int>(board.model.rows)),
+      corners, true
+    );
   }
   else
   {
@@ -422,14 +427,16 @@ void ChessboardDetector::drawChessboardCorners(cv::Mat &image,
     for (std::size_t i = 0; i < corners.size(); ++i)
     {
       const std::string label = std::to_string(i);
-      cv::putText(image, label, corners[i], cv::FONT_HERSHEY_SIMPLEX, 0.4,
-                  cv::Scalar(255, 0, 0), 1, cv::LINE_AA);
+      cv::putText(
+        image, label, corners[i], cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(255, 0, 0), 1,
+        cv::LINE_AA
+      );
     }
   }
 }
 
-bool ChessboardDetector::detectChessboardsCpu(const cv::Mat &image,
-                                              Chessboard2dList &boards_out) const
+bool ChessboardDetector::detectChessboardsCpu(const cv::Mat &image, Chessboard2dList &boards_out)
+  const
 {
   boards_out.clear();
   cv::Mat image_view = image;
@@ -446,9 +453,8 @@ bool ChessboardDetector::detectChessboardsCpu(const cv::Mat &image,
 #endif
 
   cpu::CpuCornerDetector corner_detector(image_view);
-  const auto refine_option = config_.refine ?
-    cpu::CpuCornerDetector::RefinementOption::DO_REFINE :
-    cpu::CpuCornerDetector::RefinementOption::NO_REFINE;
+  const auto refine_option = config_.refine ? cpu::CpuCornerDetector::RefinementOption::DO_REFINE
+                                            : cpu::CpuCornerDetector::RefinementOption::NO_REFINE;
 
   cpu::CornerCandidates corners;
   corner_detector.detect(image_view, corners, config_.score_threshold, refine_option);
@@ -457,8 +463,7 @@ bool ChessboardDetector::detectChessboardsCpu(const cv::Mat &image,
 #endif
   if (config_.verbose_logs)
   {
-    std::cerr << "[ccd][cpu] corner detect -> " << corners.p.size()
-              << " corners" << std::endl;
+    std::cerr << "[ccd][cpu] corner detect -> " << corners.p.size() << " corners" << std::endl;
   }
   if (corners.p.empty())
   {
@@ -481,8 +486,8 @@ bool ChessboardDetector::detectChessboardsCpu(const cv::Mat &image,
 #endif
   if (config_.verbose_logs)
   {
-    std::cerr << "[ccd][cpu] structure recovery -> " << checkerboards.size()
-              << " board(s)" << std::endl;
+    std::cerr << "[ccd][cpu] structure recovery -> " << checkerboards.size() << " board(s)"
+              << std::endl;
   }
   if (checkerboards.empty())
   {
@@ -498,13 +503,14 @@ bool ChessboardDetector::detectChessboardsCpu(const cv::Mat &image,
 
     std::vector<cv::Point2f> ordered;
     const bool ok = buildOrderedCorners(
-      checkerboard,
-      soa.x.size(),
+      checkerboard, soa.x.size(),
       [&soa](int index) {
-        return cv::Point2f(soa.x[static_cast<std::size_t>(index)],
-                           soa.y[static_cast<std::size_t>(index)]);
+        return cv::Point2f(
+          soa.x[static_cast<std::size_t>(index)], soa.y[static_cast<std::size_t>(index)]
+        );
       },
-      ordered);
+      ordered
+    );
     if (!ok)
     {
       continue;
@@ -519,8 +525,8 @@ bool ChessboardDetector::detectChessboardsCpu(const cv::Mat &image,
   return !boards_out.empty();
 }
 
-bool ChessboardDetector::detectChessboardsCuda(const cv::Mat &image,
-                                               Chessboard2dList &boards_out) const
+bool ChessboardDetector::detectChessboardsCuda(const cv::Mat &image, Chessboard2dList &boards_out)
+  const
 {
   boards_out.clear();
 
@@ -551,8 +557,7 @@ bool ChessboardDetector::detectChessboardsCuda(const cv::Mat &image,
                                static_cast<float>(CV_PI) / 2.0f, -static_cast<float>(CV_PI) / 4.0f,
                                static_cast<float>(CV_PI) / 2.0f, -static_cast<float>(CV_PI) / 4.0f};
 
-  const bool use_separable =
-    config_.acceleration == ChessboardAccelerationMode::CUDA_SEPARABLE;
+  const bool use_separable = config_.acceleration == ChessboardAccelerationMode::CUDA_SEPARABLE;
   // Build the GPU corner detector (six likelihood estimators, their kernels and
   // device scratch buffers) once and reuse it across frames. Constructing it per
   // call rebuilt every kernel and forced a device allocation each frame; since
@@ -560,12 +565,13 @@ bool ChessboardDetector::detectChessboardsCuda(const cv::Mat &image,
   // a single instance serves every frame and every ROI. It is cached behind an
   // opaque pointer (see the header note); setConfig() resets it when the kernel
   // settings change.
-  auto * corner_detector =
+  auto *corner_detector =
     static_cast<camera_chessboard_detector::CudaDetector *>(cuda_pipeline_.get());
-  if (corner_detector == nullptr) {
+  if (corner_detector == nullptr)
+  {
     auto built = std::make_shared<camera_chessboard_detector::CudaDetector>(
-      radius, angle1, angle2, config_.verbose_logs,
-      use_separable, config_.separable_rank);
+      radius, angle1, angle2, config_.verbose_logs, use_separable, config_.separable_rank
+    );
     corner_detector = built.get();
     cuda_pipeline_ = std::move(built);
   }
@@ -576,18 +582,14 @@ bool ChessboardDetector::detectChessboardsCuda(const cv::Mat &image,
   settings.score_threshold = config_.score_threshold;
 
   auto corners = corner_detector->detect(
-    image_u8.data,
-    image_u8.cols,
-    image_u8.rows,
-    image_u8.channels(),
-    settings);
+    image_u8.data, image_u8.cols, image_u8.rows, image_u8.channels(), settings
+  );
 #ifdef TIME_LOGGER
   _lap("corner detect (GPU pipeline total; see Map/NMS/Refine/Prune above)");
 #endif
   if (config_.verbose_logs)
   {
-    std::cerr << "[ccd][cuda] corner detect -> " << corners.x.size()
-              << " corners" << std::endl;
+    std::cerr << "[ccd][cuda] corner detect -> " << corners.x.size() << " corners" << std::endl;
     dumpCornerDiag("cuda", corners);
   }
 
@@ -605,8 +607,8 @@ bool ChessboardDetector::detectChessboardsCuda(const cv::Mat &image,
 #endif
   if (config_.verbose_logs)
   {
-    std::cerr << "[ccd][cuda] structure recovery -> " << checkerboards.size()
-              << " board(s)" << std::endl;
+    std::cerr << "[ccd][cuda] structure recovery -> " << checkerboards.size() << " board(s)"
+              << std::endl;
   }
   if (checkerboards.empty())
   {
@@ -622,13 +624,14 @@ bool ChessboardDetector::detectChessboardsCuda(const cv::Mat &image,
 
     std::vector<cv::Point2f> ordered;
     const bool ok = buildOrderedCorners(
-      checkerboard,
-      corners.x.size(),
+      checkerboard, corners.x.size(),
       [&corners](int index) {
-        return cv::Point2f(corners.x[static_cast<std::size_t>(index)],
-                           corners.y[static_cast<std::size_t>(index)]);
+        return cv::Point2f(
+          corners.x[static_cast<std::size_t>(index)], corners.y[static_cast<std::size_t>(index)]
+        );
       },
-      ordered);
+      ordered
+    );
     if (!ok)
     {
       continue;

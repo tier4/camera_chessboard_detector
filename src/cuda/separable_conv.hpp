@@ -28,17 +28,21 @@
 // proof of that. Lower ranks trade accuracy for speed; the synthetic-
 // board accuracy test in regression_test.cpp is the gating signal.
 
-#include <cuda_runtime.h>
-#include <memory>
-#include <vector>
-
 #include "core.hpp"
 #include "cuda/gpu_buffers.hpp"
 
-namespace camera_chessboard_detector {
-namespace cuda {
+#include <cuda_runtime.h>
 
-class CudaSeparableConvolver {
+#include <memory>
+#include <vector>
+
+namespace camera_chessboard_detector
+{
+namespace cuda
+{
+
+class CudaSeparableConvolver
+{
 public:
   CudaSeparableConvolver();
   ~CudaSeparableConvolver();
@@ -52,8 +56,7 @@ public:
   // Configure the separable representation from a dense kernel.
   // requested_rank <= 0 selects full rank (== 2*radius + 1).
   // Idempotent: safe to call repeatedly with the same kernel.
-  void set_kernel(const camera_chessboard_detector::CpuKernelF32 &kernel,
-                  int requested_rank);
+  void set_kernel(const camera_chessboard_detector::CpuKernelF32 &kernel, int requested_rank);
 
   // Apply (sum over k of u_k * v_k^T) cross-correlated against the
   // input image; writes into output. Output is resized and zeroed.
@@ -72,7 +75,7 @@ private:
   // doubling, no padding, no alignment tricks. Speed lives elsewhere.
   std::vector<float *> d_u_;
   std::vector<float *> d_v_;
-  GpuImagePtr tmp_;       // intermediate horizontal-pass scratch
+  GpuImagePtr tmp_;  // intermediate horizontal-pass scratch
   cudaStream_t stream_;
 };
 

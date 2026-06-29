@@ -16,18 +16,19 @@
 
 #include "score/correlation_kernel_cache.hpp"
 
+#include <opencv2/core.hpp>
+
 #include <algorithm>
 #include <cmath>
 
-#include <opencv2/core.hpp>
-
-namespace camera_chessboard_detector {
-namespace {
+namespace camera_chessboard_detector
+{
+namespace
+{
 
 constexpr float kPi = 3.14159265358979323846f;
 constexpr float kTwoPi = 2.0f * kPi;
-constexpr float kBinStep =
-    kTwoPi / static_cast<float>(CorrelationKernelCache::kNumAngleBins);
+constexpr float kBinStep = kTwoPi / static_cast<float>(CorrelationKernelCache::kNumAngleBins);
 
 // Gaussian (mu=0) probability density used to weight the correlation
 // kernels:
@@ -36,14 +37,16 @@ constexpr float kBinStep =
 //
 // `sigma` is `radius / 2` (integer division: sigma = 2 for R=4, 4 for
 // R=8, 6 for R=12).
-float gaussianPdf(float dist, float sigma) {
+float gaussianPdf(float dist, float sigma)
+{
   const float s = std::exp(-0.5f * dist * dist / (sigma * sigma));
   return s / (std::sqrt(2.0f * kPi) * sigma);
 }
 
 }  // namespace
 
-int CorrelationKernelCache::angleToBin(float angle) noexcept {
+int CorrelationKernelCache::angleToBin(float angle) noexcept
+{
   // Wrap into [-pi, +pi).
   float wrapped = angle - kTwoPi * std::floor((angle + kPi) / kTwoPi);
   // Shift to [0, 2*pi) then divide into N bins.
@@ -56,21 +59,26 @@ int CorrelationKernelCache::angleToBin(float angle) noexcept {
   return bin;
 }
 
-float CorrelationKernelCache::binToAngle(int bin) noexcept {
+float CorrelationKernelCache::binToAngle(int bin) noexcept
+{
   return -kPi + kBinStep * (static_cast<float>(bin) + 0.5f);
 }
 
-const cv::Mat & CorrelationKernelCache::disTable(int radius) {
+const cv::Mat &CorrelationKernelCache::disTable(int radius)
+{
   auto it = dis_tables_.find(radius);
-  if (it != dis_tables_.end()) {
+  if (it != dis_tables_.end())
+  {
     return it->second;
   }
   const int size = 2 * radius + 1;
   cv::Mat dis(size, size, CV_32F);
-  for (int v = 0; v < size; ++v) {
-    float * row = dis.ptr<float>(v);
+  for (int v = 0; v < size; ++v)
+  {
+    float *row = dis.ptr<float>(v);
     const float dv = static_cast<float>(v - radius);
-    for (int u = 0; u < size; ++u) {
+    for (int u = 0; u < size; ++u)
+    {
       const float du = static_cast<float>(u - radius);
       row[u] = std::sqrt(du * du + dv * dv);
     }
@@ -78,9 +86,9 @@ const cv::Mat & CorrelationKernelCache::disTable(int radius) {
   return dis_tables_.emplace(radius, std::move(dis)).first->second;
 }
 
-CorrelationKernelSet CorrelationKernelCache::build(int angle1_bin, int angle2_bin,
-                                       int radius) {
-  const cv::Mat & dis = disTable(radius);
+CorrelationKernelSet CorrelationKernelCache::build(int angle1_bin, int angle2_bin, int radius)
+{
+  const cv::Mat &dis = disTable(radius);
 
   const float angle1 = binToAngle(angle1_bin);
   const float angle2 = binToAngle(angle2_bin);
@@ -97,14 +105,16 @@ CorrelationKernelSet CorrelationKernelCache::build(int angle1_bin, int angle2_bi
   set.c = cv::Mat::zeros(size, size, CV_32F);
   set.d = cv::Mat::zeros(size, size, CV_32F);
 
-  for (int v = 0; v < size; ++v) {
-    const float * dis_row = dis.ptr<float>(v);
-    float * a_row = set.a.ptr<float>(v);
-    float * b_row = set.b.ptr<float>(v);
-    float * c_row = set.c.ptr<float>(v);
-    float * d_row = set.d.ptr<float>(v);
+  for (int v = 0; v < size; ++v)
+  {
+    const float *dis_row = dis.ptr<float>(v);
+    float *a_row = set.a.ptr<float>(v);
+    float *b_row = set.b.ptr<float>(v);
+    float *c_row = set.c.ptr<float>(v);
+    float *d_row = set.d.ptr<float>(v);
     const float vec1 = static_cast<float>(v - radius);
-    for (int u = 0; u < size; ++u) {
+    for (int u = 0; u < size; ++u)
+    {
       const float vec0 = static_cast<float>(u - radius);
       const float side1 = vec0 * (-sin1) + vec1 * cos1;
       const float side2 = vec0 * (-sin2) + vec1 * cos2;
@@ -124,15 +134,16 @@ CorrelationKernelSet CorrelationKernelCache::build(int angle1_bin, int angle2_bi
   return set;
 }
 
-const CorrelationKernelSet & CorrelationKernelCache::get(float angle1, float angle2,
-                                             int radius) {
+const CorrelationKernelSet &CorrelationKernelCache::get(float angle1, float angle2, int radius)
+{
   Key key;
   key.angle1_bin = static_cast<std::int16_t>(angleToBin(angle1));
   key.angle2_bin = static_cast<std::int16_t>(angleToBin(angle2));
   key.radius = static_cast<std::int16_t>(radius);
 
   auto it = entries_.find(key);
-  if (it != entries_.end()) {
+  if (it != entries_.end())
+  {
     return it->second;
   }
   CorrelationKernelSet set = build(key.angle1_bin, key.angle2_bin, radius);

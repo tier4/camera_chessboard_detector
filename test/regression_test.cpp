@@ -30,6 +30,12 @@
 // Comparison is set-based (order-independent nearest-neighbour): the
 // meaningful invariant is the detected corner *set*, not its order.
 
+#include "camera_chessboard_detector/detector.hpp"
+
+#include <opencv2/opencv.hpp>
+
+#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -37,11 +43,6 @@
 #include <fstream>
 #include <string>
 #include <vector>
-
-#include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
-
-#include "camera_chessboard_detector/detector.hpp"
 
 #ifndef CCD_SAMPLE_IMAGE
 #define CCD_SAMPLE_IMAGE ""
@@ -83,9 +84,9 @@ Synthetic makeSyntheticBoard(int sq_cols, int sq_rows, int square_px, int margin
       {
         continue;  // leave white
       }
-      const cv::Rect cell(margin_px + c * square_px,
-                          margin_px + r * square_px,
-                          square_px, square_px);
+      const cv::Rect cell(
+        margin_px + c * square_px, margin_px + r * square_px, square_px, square_px
+      );
       cv::rectangle(img, cell, cv::Scalar(0), cv::FILLED);
     }
   }
@@ -101,18 +102,19 @@ Synthetic makeSyntheticBoard(int sq_cols, int sq_rows, int square_px, int margin
   {
     for (int i = 1; i < sq_cols; ++i)
     {
-      s.gt_inner_corners.push_back(
-        Pt{static_cast<float>(margin_px + i * square_px),
-           static_cast<float>(margin_px + j * square_px)});
+      s.gt_inner_corners.push_back(Pt{
+        static_cast<float>(margin_px + i * square_px), static_cast<float>(margin_px + j * square_px)
+      });
     }
   }
   return s;
 }
 
 // --- detection helper -------------------------------------------------------
-bool detect(const cv::Mat &image, fb::ChessboardAccelerationMode mode,
-            std::vector<Pt> &corners_out,
-            int separable_rank = -1)
+bool detect(
+  const cv::Mat &image, fb::ChessboardAccelerationMode mode, std::vector<Pt> &corners_out,
+  int separable_rank = -1
+)
 {
   fb::ChessboardModel model;  // rows=cols=0 -> size-agnostic
   fb::ChessboardDetectorConfig cfg;
@@ -154,8 +156,8 @@ void writeGolden(const std::string &name, std::vector<Pt> pts)
 {
   sortPts(pts);
   std::ofstream ofs(goldenPath(name));
-  ofs << "# camera_chessboard_detector golden: " << name
-      << " (sorted y,x; " << pts.size() << " pts)\n";
+  ofs << "# camera_chessboard_detector golden: " << name << " (sorted y,x; " << pts.size()
+      << " pts)\n";
   ofs.setf(std::ios::fixed);
   ofs.precision(4);
   for (const auto &p : pts)
@@ -184,16 +186,14 @@ bool readGolden(const std::string &name, std::vector<Pt> &pts)
     {
       continue;
     }
-    pts.push_back(Pt{std::stof(line.substr(0, comma)),
-                     std::stof(line.substr(comma + 1))});
+    pts.push_back(Pt{std::stof(line.substr(0, comma)), std::stof(line.substr(comma + 1))});
   }
   return true;
 }
 
 // Order-independent set match: equal sizes + a greedy 1-1 nearest assignment
 // within `tol` px. Returns the worst matched distance (or -1 on failure).
-double setMatchMaxDist(const std::vector<Pt> &a, const std::vector<Pt> &b,
-                       double tol)
+double setMatchMaxDist(const std::vector<Pt> &a, const std::vector<Pt> &b, double tol)
 {
   if (a.size() != b.size())
   {
@@ -245,10 +245,7 @@ const Synthetic &synthetic()
   return s;
 }
 
-cv::Mat sampleImage()
-{
-  return cv::imread(CCD_SAMPLE_IMAGE, cv::IMREAD_COLOR);
-}
+cv::Mat sampleImage() { return cv::imread(CCD_SAMPLE_IMAGE, cv::IMREAD_COLOR); }
 
 void goldenCheckOrRecord(const std::string &name, const std::vector<Pt> &pts)
 {
@@ -261,8 +258,8 @@ void goldenCheckOrRecord(const std::string &name, const std::vector<Pt> &pts)
   ASSERT_TRUE(readGolden(name, golden))
     << "missing golden " << name << " — run with CCD_RECORD_GOLDEN=1";
   const double w = setMatchMaxDist(pts, golden, kRegressionTolPx);
-  EXPECT_GE(w, 0.0) << name << ": set mismatch vs golden (size "
-                    << pts.size() << " vs " << golden.size() << ")";
+  EXPECT_GE(w, 0.0) << name << ": set mismatch vs golden (size " << pts.size() << " vs "
+                    << golden.size() << ")";
 }
 
 }  // namespace
@@ -315,8 +312,7 @@ TEST(Parity, SampleCpuVsCuda)
     GTEST_SKIP() << "CUDA pipeline unavailable";
   }
   const double w = setMatchMaxDist(cpu, cuda, kParityTolPx);
-  EXPECT_GE(w, 0.0) << "CPU/CUDA disagree (sizes " << cpu.size()
-                    << " vs " << cuda.size() << ")";
+  EXPECT_GE(w, 0.0) << "CPU/CUDA disagree (sizes " << cpu.size() << " vs " << cuda.size() << ")";
 }
 
 // --- accuracy vs known ground truth (CUDA handles the synthetic board) -----
@@ -330,10 +326,9 @@ TEST(Accuracy, SyntheticCudaVsGroundTruth)
   std::vector<Pt> gt = synthetic().gt_inner_corners;
   // 1-1 match detected<->GT within sub-pixel tolerance (recall + precision).
   const double w = setMatchMaxDist(c, gt, kAccuracyTolPx);
-  EXPECT_GE(w, 0.0) << "CUDA synthetic detection (" << c.size()
-                    << ") does not match the " << gt.size()
-                    << " ground-truth inner corners within "
-                    << kAccuracyTolPx << " px";
+  EXPECT_GE(w, 0.0) << "CUDA synthetic detection (" << c.size() << ") does not match the "
+                    << gt.size() << " ground-truth inner corners within " << kAccuracyTolPx
+                    << " px";
 }
 
 // --- CPU synthetic detection ----------------------------------------------
@@ -354,10 +349,9 @@ TEST(Accuracy, SyntheticCpuVsGroundTruth)
   ASSERT_TRUE(detect(synthetic().image, fb::ChessboardAccelerationMode::CPU, c));
   std::vector<Pt> gt = synthetic().gt_inner_corners;
   const double w = setMatchMaxDist(c, gt, kAccuracyTolPx);
-  EXPECT_GE(w, 0.0) << "CPU synthetic detection (" << c.size()
-                    << ") does not match the " << gt.size()
-                    << " ground-truth inner corners within "
-                    << kAccuracyTolPx << " px";
+  EXPECT_GE(w, 0.0) << "CPU synthetic detection (" << c.size() << ") does not match the "
+                    << gt.size() << " ground-truth inner corners within " << kAccuracyTolPx
+                    << " px";
 }
 
 TEST(Parity, SyntheticCpuVsCuda)
@@ -370,8 +364,8 @@ TEST(Parity, SyntheticCpuVsCuda)
     GTEST_SKIP() << "CUDA pipeline unavailable";
   }
   const double w = setMatchMaxDist(cpu, cuda, kParityTolPx);
-  EXPECT_GE(w, 0.0) << "CPU/CUDA disagree on synthetic (sizes " << cpu.size()
-                    << " vs " << cuda.size() << ")";
+  EXPECT_GE(w, 0.0) << "CPU/CUDA disagree on synthetic (sizes " << cpu.size() << " vs "
+                    << cuda.size() << ")";
 }
 
 // --- opt-in SVD-separable path: gating signals for adoption ----------------
@@ -389,16 +383,14 @@ constexpr double kSeparableParityTolPx = 1.0;  // FP accumulation in 2 passes
 TEST(SeparableFullRank, SyntheticAccuracy)
 {
   std::vector<Pt> c;
-  if (!detect(synthetic().image,
-              fb::ChessboardAccelerationMode::CUDA_SEPARABLE, c, -1))
+  if (!detect(synthetic().image, fb::ChessboardAccelerationMode::CUDA_SEPARABLE, c, -1))
   {
     GTEST_SKIP() << "CUDA pipeline unavailable";
   }
   const std::vector<Pt> &gt = synthetic().gt_inner_corners;
   const double w = setMatchMaxDist(c, gt, kAccuracyTolPx);
-  EXPECT_GE(w, 0.0) << "CUDA separable (full rank) synthetic detection ("
-                    << c.size() << ") does not match the " << gt.size()
-                    << " ground-truth inner corners within "
+  EXPECT_GE(w, 0.0) << "CUDA separable (full rank) synthetic detection (" << c.size()
+                    << ") does not match the " << gt.size() << " ground-truth inner corners within "
                     << kAccuracyTolPx
                     << " px. Full rank must equal the dense path; a "
                        "miss here indicates a separable-impl defect.";
@@ -414,8 +406,7 @@ TEST(SeparableFullRank, SampleMatchesCudaDense)
   {
     GTEST_SKIP() << "CUDA dense pipeline unavailable";
   }
-  if (!detect(img, fb::ChessboardAccelerationMode::CUDA_SEPARABLE,
-              separable, -1))
+  if (!detect(img, fb::ChessboardAccelerationMode::CUDA_SEPARABLE, separable, -1))
   {
     GTEST_SKIP() << "CUDA separable pipeline unavailable";
   }
@@ -433,9 +424,7 @@ TEST(SeparableFullRank, SyntheticMatchesCudaDense)
   {
     GTEST_SKIP() << "CUDA dense pipeline unavailable";
   }
-  if (!detect(synthetic().image,
-              fb::ChessboardAccelerationMode::CUDA_SEPARABLE,
-              separable, -1))
+  if (!detect(synthetic().image, fb::ChessboardAccelerationMode::CUDA_SEPARABLE, separable, -1))
   {
     GTEST_SKIP() << "CUDA separable pipeline unavailable";
   }

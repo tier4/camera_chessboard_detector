@@ -17,11 +17,11 @@
 #ifndef CCD__TYPES_HPP
 #define CCD__TYPES_HPP
 
+#include <opencv2/core.hpp>
+
 #include <cstdint>
 #include <string>
 #include <vector>
-
-#include <opencv2/core.hpp>
 
 // Self-contained result types for this package. Keeping them local avoids any
 // message-definition or external schema dependency. Mapping these into a
@@ -48,9 +48,9 @@ struct Point2f
 
 struct ChessboardModel
 {
-  float square_size{};        // [m]
-  std::uint32_t rows{};       // inner-corner rows (0 == size-agnostic)
-  std::uint32_t cols{};       // inner-corner cols (0 == size-agnostic)
+  float square_size{};   // [m]
+  std::uint32_t rows{};  // inner-corner rows (0 == size-agnostic)
+  std::uint32_t cols{};  // inner-corner cols (0 == size-agnostic)
 };
 
 struct Chessboard2d

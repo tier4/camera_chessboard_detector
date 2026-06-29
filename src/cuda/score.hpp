@@ -16,13 +16,15 @@
 
 #pragma once
 
-#include <cstddef>
-
 #include "core.hpp"
 #include "cuda/gpu_buffers.hpp"
 
-namespace camera_chessboard_detector {
-namespace cuda {
+#include <cstddef>
+
+namespace camera_chessboard_detector
+{
+namespace cuda
+{
 
 // On-GPU per-corner scoring for the Geiger detector.
 //
@@ -59,7 +61,8 @@ namespace cuda {
 // The class owns device buffers for (x, y, e1_cos, e1_sin, e2_cos,
 // e2_sin, score) lazily resized on demand. It is not thread-safe;
 // callers must serialise.
-class CudaScoreCorners {
+class CudaScoreCorners
+{
 public:
   // Initial device-array capacity; grown on demand. The 4K production
   // sample yields a few hundred corners, so 4 k is generous.
@@ -69,28 +72,27 @@ public:
   ~CudaScoreCorners();
 
   CudaScoreCorners(const CudaScoreCorners &) = delete;
-  CudaScoreCorners & operator=(const CudaScoreCorners &) = delete;
+  CudaScoreCorners &operator=(const CudaScoreCorners &) = delete;
   CudaScoreCorners(CudaScoreCorners &&) = delete;
-  CudaScoreCorners & operator=(CudaScoreCorners &&) = delete;
+  CudaScoreCorners &operator=(CudaScoreCorners &&) = delete;
 
   // Score every corner in `corners` against (img, weights). The
   // function reads `corners.{x, y, edge1_cos, edge1_sin, edge2_cos,
   // edge2_sin}` and writes `corners.score`. Initial score is 0; the
   // per-radius max is taken on the device. Other fields are left
   // unchanged.
-  void run(const GpuImagePtr & img, const GpuImagePtr & weights,
-           CornerArray & corners);
+  void run(const GpuImagePtr &img, const GpuImagePtr &weights, CornerArray &corners);
 
 private:
   void ensureCapacity(std::size_t min_capacity);
 
-  float * d_x_{nullptr};
-  float * d_y_{nullptr};
-  float * d_e1c_{nullptr};
-  float * d_e1s_{nullptr};
-  float * d_e2c_{nullptr};
-  float * d_e2s_{nullptr};
-  float * d_score_{nullptr};
+  float *d_x_{nullptr};
+  float *d_y_{nullptr};
+  float *d_e1c_{nullptr};
+  float *d_e1s_{nullptr};
+  float *d_e2c_{nullptr};
+  float *d_e2s_{nullptr};
+  float *d_score_{nullptr};
   std::size_t capacity_{0};
 };
 

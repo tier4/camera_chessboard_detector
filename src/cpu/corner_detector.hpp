@@ -16,16 +16,18 @@
 
 #pragma once
 
-#include <utility>
-#include <vector>
-
-#include <opencv2/opencv.hpp>
-
 #include "cpu/corner_candidates.hpp"
 #include "score/correlation_kernel_cache.hpp"
 
-namespace camera_chessboard_detector {
-namespace cpu {
+#include <opencv2/opencv.hpp>
+
+#include <utility>
+#include <vector>
+
+namespace camera_chessboard_detector
+{
+namespace cpu
+{
 
 // Scalar type and matching OpenCV depth used throughout the CPU front end.
 // Switch both lines together to build the detector in double precision.
@@ -34,20 +36,19 @@ constexpr int kMatDepth = CV_32F;
 
 // CPU corner front end: Geiger likelihood map, non-maximum suppression,
 // sub-pixel refinement and per-corner scoring.
-class CpuCornerDetector {
+class CpuCornerDetector
+{
 public:
-  enum RefinementOption : bool {
-    NO_REFINE = false,
-    DO_REFINE = true
-  };
+  enum RefinementOption : bool { NO_REFINE = false, DO_REFINE = true };
 
   CpuCornerDetector();
   ~CpuCornerDetector();
   explicit CpuCornerDetector(cv::Mat img);
 
-  void detect(cv::Mat &src, CornerCandidates &mcorners,
-                     real_t scoreThreshold,
-                     RefinementOption refinementOption = DO_REFINE);
+  void detect(
+    cv::Mat &src, CornerCandidates &mcorners, real_t scoreThreshold,
+    RefinementOption refinementOption = DO_REFINE
+  );
 
 private:
   void buildLikelihoodMap(cv::Mat &src, cv::Mat &dst);
@@ -57,35 +58,40 @@ private:
   void elementwiseMin(cv::Mat src1, cv::Mat src2, cv::Mat &dst);
   void elementwiseMax(cv::Mat src1, cv::Mat src2, cv::Mat &dst);
 
-  void computeGradientOrientation(cv::Mat img, cv::Mat &imgDu, cv::Mat &imgDv,
-                              cv::Mat &imgAngle, cv::Mat &imgWeight);
+  void computeGradientOrientation(
+    cv::Mat img, cv::Mat &imgDu, cv::Mat &imgDv, cv::Mat &imgAngle, cv::Mat &imgWeight
+  );
 
   void estimateEdgeOrientations(cv::Mat imgAngle, cv::Mat imgWeight, int index);
 
-  void findHistogramModes(std::vector<real_t> hist,
-                          std::vector<real_t> &hist_smoothed,
-                          std::vector<std::pair<real_t, int>> &modes,
-                          real_t sigma);
+  void findHistogramModes(
+    std::vector<real_t> hist, std::vector<real_t> &hist_smoothed,
+    std::vector<std::pair<real_t, int>> &modes, real_t sigma
+  );
 
-  void scoreAllCorners(cv::Mat img, cv::Mat imgAngle, cv::Mat imgWeight,
-                    std::vector<cv::Point2f> &corners, std::vector<int> radius,
-                    std::vector<float> &score);
+  void scoreAllCorners(
+    cv::Mat img, cv::Mat imgAngle, cv::Mat imgWeight, std::vector<cv::Point2f> &corners,
+    std::vector<int> radius, std::vector<float> &score
+  );
 
-  void correlationScore(cv::Mat img, cv::Mat imgWeight,
-                              std::vector<cv::Point2f> cornersEdge,
-                              float &score);
+  void correlationScore(
+    cv::Mat img, cv::Mat imgWeight, std::vector<cv::Point2f> cornersEdge, float &score
+  );
 
-  void refineCornersSubpixel(std::vector<cv::Point2f> &corners, cv::Mat imgDu,
-                     cv::Mat imgDv, cv::Mat imgAngle, cv::Mat imgWeight,
-                     float radius);
+  void refineCornersSubpixel(
+    std::vector<cv::Point2f> &corners, cv::Mat imgDu, cv::Mat imgDv, cv::Mat imgAngle,
+    cv::Mat imgWeight, float radius
+  );
 
-  void buildQuadrantKernels(float angle1, float angle2, int kernelSize,
-                    cv::Mat &kernelA, cv::Mat &kernelB, cv::Mat &kernelC,
-                    cv::Mat &kernelD);
+  void buildQuadrantKernels(
+    float angle1, float angle2, int kernelSize, cv::Mat &kernelA, cv::Mat &kernelB,
+    cv::Mat &kernelC, cv::Mat &kernelD
+  );
 
-  void nonMaxSuppress(cv::Mat &inputCorners,
-                             std::vector<cv::Point2f> &outputCorners,
-                             int patchSize, real_t threshold, int margin);
+  void nonMaxSuppress(
+    cv::Mat &inputCorners, std::vector<cv::Point2f> &outputCorners, int patchSize, real_t threshold,
+    int margin
+  );
 
   float vecNorm(cv::Point2f o);
 

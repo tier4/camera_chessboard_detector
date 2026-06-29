@@ -24,15 +24,14 @@
 //
 // Build with -DCCD_PROFILE=ON to also emit the per-stage timing the library
 // prints internally (map-gen / NMS / refine / score / structure recovery).
+#include <camera_chessboard_detector/detector.hpp>
+#include <opencv2/opencv.hpp>
+
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
 #include <vector>
-
-#include <opencv2/opencv.hpp>
-
-#include <camera_chessboard_detector/detector.hpp>
 
 #ifndef CCD_SAMPLE_IMAGE
 #define CCD_SAMPLE_IMAGE ""
@@ -40,16 +39,18 @@
 
 namespace ccd = camera_chessboard_detector;
 
-namespace {
+namespace
+{
 
-struct Preset {
+struct Preset
+{
   const char *name;
   int w;
   int h;
 };
 
-double runMode(const cv::Mat &img, ccd::ChessboardAccelerationMode mode,
-               int warm, int &corners_out) {
+double runMode(const cv::Mat &img, ccd::ChessboardAccelerationMode mode, int warm, int &corners_out)
+{
   ccd::ChessboardModel model;  // rows = cols = 0 -> size-agnostic
   ccd::ChessboardDetectorConfig cfg;
   cfg.acceleration = mode;
@@ -61,14 +62,14 @@ double runMode(const cv::Mat &img, ccd::ChessboardAccelerationMode mode,
 
   double total_ms = 0.0;
   corners_out = 0;
-  for (int i = 0; i < warm; ++i) {
+  for (int i = 0; i < warm; ++i)
+  {
     const auto t0 = std::chrono::high_resolution_clock::now();
     const bool ok = detector.detectChessboards(img, out);
     const auto t1 = std::chrono::high_resolution_clock::now();
-    total_ms +=
-        std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() *
-        1e-3;
-    if (ok && !out.boards.empty()) {
+    total_ms += std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-3;
+    if (ok && !out.boards.empty())
+    {
       corners_out = static_cast<int>(out.boards.front().corners2d.size());
     }
   }
@@ -77,28 +78,33 @@ double runMode(const cv::Mat &img, ccd::ChessboardAccelerationMode mode,
 
 }  // namespace
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   const std::string path = (argc > 1) ? argv[1] : CCD_SAMPLE_IMAGE;
   const int warm = (argc > 2) ? std::max(1, std::atoi(argv[2])) : 5;
   const std::string filter = (argc > 3) ? argv[3] : "";
 
   const cv::Mat src = cv::imread(path, cv::IMREAD_COLOR);
-  if (src.empty()) {
+  if (src.empty())
+  {
     std::fprintf(stderr, "cannot load image: %s\n", path.c_str());
     return 1;
   }
 
   const std::vector<Preset> presets = {
-      {"VGA", 640, 360},   {"SD", 720, 405},     {"HD", 1280, 720},
-      {"FHD", 1920, 1080}, {"4K", 3840, 2160},
+    {"VGA", 640, 360}, {"SD", 720, 405}, {"HD", 1280, 720}, {"FHD", 1920, 1080}, {"4K", 3840, 2160},
   };
 
   std::printf("source %dx%d  warm-iterations=%d\n", src.cols, src.rows, warm);
-  std::printf("%-5s %-11s %11s %11s %13s   corners(cpu/cuda/sep)\n", "preset",
-              "resolution", "CPU ms", "CUDA ms", "CUDA-sep1 ms");
+  std::printf(
+    "%-5s %-11s %11s %11s %13s   corners(cpu/cuda/sep)\n", "preset", "resolution", "CPU ms",
+    "CUDA ms", "CUDA-sep1 ms"
+  );
 
-  for (const auto &p : presets) {
-    if (!filter.empty() && std::string(p.name).find(filter) == std::string::npos) {
+  for (const auto &p : presets)
+  {
+    if (!filter.empty() && std::string(p.name).find(filter) == std::string::npos)
+    {
       continue;
     }
     cv::Mat img;
@@ -107,13 +113,14 @@ int main(int argc, char **argv) {
     int c_cpu = 0, c_cuda = 0, c_sep = 0;
     const double cpu = runMode(img, ccd::ChessboardAccelerationMode::CPU, warm, c_cpu);
     const double cuda = runMode(img, ccd::ChessboardAccelerationMode::CUDA, warm, c_cuda);
-    const double sep =
-        runMode(img, ccd::ChessboardAccelerationMode::CUDA_SEPARABLE, warm, c_sep);
+    const double sep = runMode(img, ccd::ChessboardAccelerationMode::CUDA_SEPARABLE, warm, c_sep);
 
     char res[32];
     std::snprintf(res, sizeof(res), "%dx%d", p.w, p.h);
-    std::printf("%-5s %-11s %11.1f %11.1f %13.1f   %d/%d/%d\n", p.name, res, cpu,
-                cuda, sep, c_cpu, c_cuda, c_sep);
+    std::printf(
+      "%-5s %-11s %11.1f %11.1f %13.1f   %d/%d/%d\n", p.name, res, cpu, cuda, sep, c_cpu, c_cuda,
+      c_sep
+    );
     std::fflush(stdout);
   }
   return 0;

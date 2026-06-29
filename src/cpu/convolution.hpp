@@ -18,8 +18,10 @@
 
 #include <opencv2/opencv.hpp>
 
-namespace camera_chessboard_detector {
-namespace cpu {
+namespace camera_chessboard_detector
+{
+namespace cpu
+{
 
 enum ConvolutionType {
   // Full convolution, including the border region.

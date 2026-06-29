@@ -17,16 +17,17 @@
 #pragma once
 
 #include "core.hpp"
+#include "cuda/gpu_buffers.hpp"
 #include "cuda/kernels.hpp"
 #include "cuda/nms.hpp"
+#include "cuda/preprocess.hpp"
 #include "cuda/score.hpp"
 #include "cuda/separable_conv.hpp"
-#include "cuda/gpu_buffers.hpp"
-#include "cuda/preprocess.hpp"
 
 #include <unordered_map>
 
-namespace camera_chessboard_detector {
+namespace camera_chessboard_detector
+{
 
 using cuda::GpuImagePtr;
 using cuda::GpuKernelPtr;
@@ -37,7 +38,8 @@ class CudaDetectorImpl;
  * @brief Generates a likelihood map for a given image using the four
  * Geiger corner kernels.
  */
-class CudaLikelihoodEstimator {
+class CudaLikelihoodEstimator
+{
   enum {
     NUM_KERNELS = 4,
   };
@@ -46,16 +48,15 @@ public:
   CudaLikelihoodEstimator() {}
   ~CudaLikelihoodEstimator() {}
 
-  inline void set_kernel(int index, GpuKernelPtr &&kernel) {
-    kernels_[index] = std::move(kernel);
-  }
+  inline void set_kernel(int index, GpuKernelPtr &&kernel) { kernels_[index] = std::move(kernel); }
 
   // Opt-in: configure the estimator to dispatch map-gen via
   // the SVD-separable path with the requested rank (<= 0 = full rank
   // = kernel side length). Call before configureKernels(). When
   // left false, behaviour is bit-stable with the historical dense
   // dense-convolution path.
-  inline void set_use_separable(bool enable, int rank) {
+  inline void set_use_separable(bool enable, int rank)
+  {
     use_separable_ = enable;
     separable_rank_ = rank;
   }
@@ -74,11 +75,13 @@ public:
   //   normalized_image_ = image;
   // }
 
-  void cache(const std::string &name, const GpuImagePtr &image) {
+  void cache(const std::string &name, const GpuImagePtr &image)
+  {
     output_maps_[std::hash<std::string>{}(name)] = image;
   }
 
-  GpuImagePtr get_cached(const std::string &name) {
+  GpuImagePtr get_cached(const std::string &name)
+  {
     return output_maps_[std::hash<std::string>{}(name)];
   }
 
@@ -107,25 +110,27 @@ private:
   std::unordered_map<int, GpuImagePtr> output_maps_;
 };
 
-class CudaDetector {
+class CudaDetector
+{
 public:
-  CudaDetector(std::vector<int> &radius, std::vector<float> &angle1,
-               std::vector<float> &angle2,
-               bool verbose_logging = false,
-               bool use_separable = false,
-               int separable_rank = -1);
+  CudaDetector(
+    std::vector<int> &radius, std::vector<float> &angle1, std::vector<float> &angle2,
+    bool verbose_logging = false, bool use_separable = false, int separable_rank = -1
+  );
   ~CudaDetector();
 
   // #ifdef OPENCV_ENABLED
   //   void detect(const cv::Mat &image);
   // #endif
-  CornerArray detect(const float *data, int width, int height,
-                      DetectThresholds s, bool convert_to_gray = true);
+  CornerArray detect(
+    const float *data, int width, int height, DetectThresholds s, bool convert_to_gray = true
+  );
   CornerArray detect(const GpuImagePtr &image, DetectThresholds s);
   // Uint8 BGR/gray host image -> GPU preprocess (BGR2GRAY + blur + normalize)
   // -> detect. `channels` is 1 or 3.
-  CornerArray detect(const unsigned char *data, int width, int height,
-                     int channels, DetectThresholds s);
+  CornerArray detect(
+    const unsigned char *data, int width, int height, int channels, DetectThresholds s
+  );
 
 private:
   CudaDetectorImpl *impl_;
@@ -133,24 +138,27 @@ private:
   GpuImagePtr input_;
 };
 
-class CudaDetectorImpl {
+class CudaDetectorImpl
+{
 public:
-  CudaDetectorImpl(std::vector<int> &radius, std::vector<float> &angle1,
-                   std::vector<float> &angle2,
-                   bool verbose_logging = false,
-                   bool use_separable = false,
-                   int separable_rank = -1);
+  CudaDetectorImpl(
+    std::vector<int> &radius, std::vector<float> &angle1, std::vector<float> &angle2,
+    bool verbose_logging = false, bool use_separable = false, int separable_rank = -1
+  );
   ~CudaDetectorImpl();
 
-  CornerArray runDetect(const GpuImagePtr &devimg,
-                          int nms_margin, int nms_radius, float nms_threshold,
-                          float score_threshold);
-  CornerArray detectHost(const unsigned char *data, int width, int height,
-                         int channels, DetectThresholds s);
+  CornerArray runDetect(
+    const GpuImagePtr &devimg, int nms_margin, int nms_radius, float nms_threshold,
+    float score_threshold
+  );
+  CornerArray detectHost(
+    const unsigned char *data, int width, int height, int channels, DetectThresholds s
+  );
 
 private:
-  void pruneCorners(const GpuImagePtr &devimg, const GpuImagePtr &weights,
-                     CornerArray &corners, float threshold);
+  void pruneCorners(
+    const GpuImagePtr &devimg, const GpuImagePtr &weights, CornerArray &corners, float threshold
+  );
 
   std::vector<CudaLikelihoodEstimator> estimators_;
   cuda::CudaPreprocessor preproc_;
@@ -167,4 +175,4 @@ private:
   GpuImagePtr gy_;
 };
 
-} // namespace camera_chessboard_detector
+}  // namespace camera_chessboard_detector
