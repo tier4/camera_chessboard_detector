@@ -25,7 +25,7 @@
 namespace camera_chessboard_detector
 {
 
-constexpr float PI = 3.14159265358979323846f;
+constexpr float kPi = 3.14159265358979323846f;
 
 // Structure-of-arrays corner set passed between detection stages. Each
 // corner carries its sub-pixel position and the two unit (cos, sin) edge
@@ -74,9 +74,9 @@ public:
   T at(int x, int y) const { return data_[y * width_ + x]; }
   const T *data() const { return data_.data(); }
 
-  cv::Mat to_mat_f32() const;
-  cv::Mat to_mat_u8() const;
-  cv::Mat to_mat() const;
+  cv::Mat toMatF32() const;
+  cv::Mat toMatU8() const;
+  cv::Mat toMat() const;
 
 protected:
   bool initialized_;
@@ -133,6 +133,8 @@ public:
   );
 
   cv::Mat chessboard;
+
+private:
   float lambda_;
   bool verbose_logging_{false};
 };

@@ -56,7 +56,7 @@ public:
   // Configure the separable representation from a dense kernel.
   // requested_rank <= 0 selects full rank (== 2*radius + 1).
   // Idempotent: safe to call repeatedly with the same kernel.
-  void set_kernel(const camera_chessboard_detector::CpuKernelF32 &kernel, int requested_rank);
+  void setKernel(const camera_chessboard_detector::CpuKernelF32 &kernel, int requested_rank);
 
   // Apply (sum over k of u_k * v_k^T) cross-correlated against the
   // input image; writes into output. Output is resized and zeroed.
@@ -66,7 +66,7 @@ public:
   int rank() const { return rank_; }
 
 private:
-  void release_();
+  void release();
 
   int radius_{0};
   int rank_{0};

@@ -29,20 +29,20 @@ Mat conv2(const Mat &img, const Mat &ikernel, ConvolutionType type)
   Mat kernel;
   flip(ikernel, kernel, -1);
   Mat source = img;
-  if (CONVOLUTION_FULL == type)
+  if (ConvolutionFull == type)
   {
     source = Mat();
-    const int additionalRows = kernel.rows - 1;
-    const int additionalCols = kernel.cols - 1;
+    const int additional_rows = kernel.rows - 1;
+    const int additional_cols = kernel.cols - 1;
     copyMakeBorder(
-      img, source, (additionalRows + 1) / 2, additionalRows / 2, (additionalCols + 1) / 2,
-      additionalCols / 2, BORDER_CONSTANT, Scalar(0)
+      img, source, (additional_rows + 1) / 2, additional_rows / 2, (additional_cols + 1) / 2,
+      additional_cols / 2, BORDER_CONSTANT, Scalar(0)
     );
   }
   Point anchor(kernel.cols - kernel.cols / 2 - 1, kernel.rows - kernel.rows / 2 - 1);
   filter2D(source, dest, img.depth(), kernel, anchor, 0, BORDER_CONSTANT);
 
-  if (CONVOLUTION_VALID == type)
+  if (ConvolutionValid == type)
   {
     dest = dest.colRange((kernel.cols - 1) / 2, dest.cols - kernel.cols / 2)
              .rowRange((kernel.rows - 1) / 2, dest.rows - kernel.rows / 2);

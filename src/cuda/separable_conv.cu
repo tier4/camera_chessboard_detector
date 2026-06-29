@@ -149,11 +149,11 @@ CudaSeparableConvolver::CudaSeparableConvolver()
 
 CudaSeparableConvolver::~CudaSeparableConvolver()
 {
-  release_();
+  release();
   cudaStreamDestroy(stream_);  // non-throwing dtor; ignore error code
 }
 
-void CudaSeparableConvolver::release_()
+void CudaSeparableConvolver::release()
 {
   for (auto *p : d_u_)
     if (p) cudaFree(p);
@@ -163,7 +163,7 @@ void CudaSeparableConvolver::release_()
   d_v_.clear();
 }
 
-void CudaSeparableConvolver::set_kernel(
+void CudaSeparableConvolver::setKernel(
   const camera_chessboard_detector::CpuKernelF32 &kernel, int requested_rank
 )
 {
@@ -174,7 +174,7 @@ void CudaSeparableConvolver::set_kernel(
   std::vector<std::vector<float>> u_components, v_components;
   decomposeKernel(kernel, requested_rank, u_components, v_components);
 
-  release_();
+  release();
   radius_ = S / 2;
   rank_ = static_cast<int>(u_components.size());
   d_u_.resize(rank_, nullptr);

@@ -53,7 +53,7 @@ private:
 class CudaRefiner
 {
 public:
-  enum RefineType { REFINE_NONE = 0, REFINE_EDGES = 1, REFINE_CORNERS = 2, REFINE_ALL = 3 };
+  enum RefineType { RefineNone = 0, RefineEdges = 1, RefineCorners = 2, RefineAll = 3 };
 
   CudaRefiner();
   ~CudaRefiner();
@@ -82,14 +82,14 @@ void min4(
   const GpuImagePtr &src4, GpuImagePtr &dst
 );
 void likelihood(
-  GpuImagePtr &dst, const GpuImagePtr &A, const GpuImagePtr &B, const GpuImagePtr &C,
-  const GpuImagePtr &D
+  GpuImagePtr &dst, const GpuImagePtr &a, const GpuImagePtr &b, const GpuImagePtr &c,
+  const GpuImagePtr &d
 );
 
-void score_gradient(CornerArray &corners, const GpuImagePtr &src, int radius);
+void scoreGradient(CornerArray &corners, const GpuImagePtr &src, int radius);
 
 template <typename T>
-void bgr_to_gray(T *dst, const T *src, int width, int height, bool interleaved);
+void bgrToGray(T *dst, const T *src, int width, int height, bool interleaved);
 
 template <typename T>
 void gaussian9x9(T *dst, const T *src, float sigma, int width, int height);

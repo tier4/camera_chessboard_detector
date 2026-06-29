@@ -52,7 +52,7 @@ CpuImage<T>::CpuImage(const cv::Mat &mat)
 }
 
 template <typename T>
-cv::Mat CpuImage<T>::to_mat_f32() const
+cv::Mat CpuImage<T>::toMatF32() const
 {
   cv::Mat mat(height_, width_, CV_32FC1);
   std::memcpy(mat.data, data_.data(), width_ * height_ * sizeof(T));
@@ -60,7 +60,7 @@ cv::Mat CpuImage<T>::to_mat_f32() const
 }
 
 template <typename T>
-cv::Mat CpuImage<T>::to_mat_u8() const
+cv::Mat CpuImage<T>::toMatU8() const
 {
   cv::Mat mat(height_, width_, CV_8UC1);
   std::memcpy(mat.data, data_.data(), width_ * height_ * sizeof(T));
@@ -68,15 +68,15 @@ cv::Mat CpuImage<T>::to_mat_u8() const
 }
 
 template <typename T>
-cv::Mat CpuImage<T>::to_mat() const
+cv::Mat CpuImage<T>::toMat() const
 {
   if constexpr (std::is_same<T, float>::value)
   {
-    return to_mat_f32();
+    return toMatF32();
   }
   else if constexpr (std::is_same<T, uint8_t>::value)
   {
-    return to_mat_u8();
+    return toMatU8();
   }
   else
   {

@@ -31,7 +31,7 @@ namespace cpu
 
 // Scalar type and matching OpenCV depth used throughout the CPU front end.
 // Switch both lines together to build the detector in double precision.
-using real_t = float;
+using RealT = float;
 constexpr int kMatDepth = CV_32F;
 
 // CPU corner front end: Geiger likelihood map, non-maximum suppression,
@@ -39,67 +39,67 @@ constexpr int kMatDepth = CV_32F;
 class CpuCornerDetector
 {
 public:
-  enum RefinementOption : bool { NO_REFINE = false, DO_REFINE = true };
+  enum RefinementOption : bool { NoRefine = false, DoRefine = true };
 
   CpuCornerDetector();
   ~CpuCornerDetector();
   explicit CpuCornerDetector(cv::Mat img);
 
   void detect(
-    cv::Mat &src, CornerCandidates &mcorners, real_t scoreThreshold,
-    RefinementOption refinementOption = DO_REFINE
+    cv::Mat &src, CornerCandidates &mcorners, RealT score_threshold,
+    RefinementOption refinement_option = DoRefine
   );
 
 private:
   void buildLikelihoodMap(cv::Mat &src, cv::Mat &dst);
 
-  real_t gaussian1d(real_t dist, real_t mu, real_t sigma);
+  RealT gaussian1d(RealT dist, RealT mu, RealT sigma);
 
   void elementwiseMin(cv::Mat src1, cv::Mat src2, cv::Mat &dst);
   void elementwiseMax(cv::Mat src1, cv::Mat src2, cv::Mat &dst);
 
   void computeGradientOrientation(
-    cv::Mat img, cv::Mat &imgDu, cv::Mat &imgDv, cv::Mat &imgAngle, cv::Mat &imgWeight
+    cv::Mat img, cv::Mat &img_du, cv::Mat &img_dv, cv::Mat &img_angle, cv::Mat &img_weight
   );
 
-  void estimateEdgeOrientations(cv::Mat imgAngle, cv::Mat imgWeight, int index);
+  void estimateEdgeOrientations(cv::Mat img_angle, cv::Mat img_weight, int index);
 
   void findHistogramModes(
-    std::vector<real_t> hist, std::vector<real_t> &hist_smoothed,
-    std::vector<std::pair<real_t, int>> &modes, real_t sigma
+    std::vector<RealT> hist, std::vector<RealT> &hist_smoothed,
+    std::vector<std::pair<RealT, int>> &modes, RealT sigma
   );
 
   void scoreAllCorners(
-    cv::Mat img, cv::Mat imgAngle, cv::Mat imgWeight, std::vector<cv::Point2f> &corners,
+    cv::Mat img, cv::Mat img_angle, cv::Mat img_weight, std::vector<cv::Point2f> &corners,
     std::vector<int> radius, std::vector<float> &score
   );
 
   void correlationScore(
-    cv::Mat img, cv::Mat imgWeight, std::vector<cv::Point2f> cornersEdge, float &score
+    cv::Mat img, cv::Mat img_weight, std::vector<cv::Point2f> corners_edge, float &score
   );
 
   void refineCornersSubpixel(
-    std::vector<cv::Point2f> &corners, cv::Mat imgDu, cv::Mat imgDv, cv::Mat imgAngle,
-    cv::Mat imgWeight, float radius
+    std::vector<cv::Point2f> &corners, cv::Mat img_du, cv::Mat img_dv, cv::Mat img_angle,
+    cv::Mat img_weight, float radius
   );
 
   void buildQuadrantKernels(
-    float angle1, float angle2, int kernelSize, cv::Mat &kernelA, cv::Mat &kernelB,
-    cv::Mat &kernelC, cv::Mat &kernelD
+    float angle1, float angle2, int kernel_size, cv::Mat &kernel_a, cv::Mat &kernel_b,
+    cv::Mat &kernel_c, cv::Mat &kernel_d
   );
 
   void nonMaxSuppress(
-    cv::Mat &inputCorners, std::vector<cv::Point2f> &outputCorners, int patchSize, real_t threshold,
-    int margin
+    cv::Mat &input_corners, std::vector<cv::Point2f> &output_corners, int patch_size,
+    RealT threshold, int margin
   );
 
   float vecNorm(cv::Point2f o);
 
   std::vector<cv::Point2f> template_angles_;
-  std::vector<int> radius;
+  std::vector<int> radius_;
   std::vector<cv::Point2f> corner_points_;
-  std::vector<std::vector<real_t>> edge_dirs1_;
-  std::vector<std::vector<real_t>> edge_dirs2_;
+  std::vector<std::vector<RealT>> edge_dirs1_;
+  std::vector<std::vector<RealT>> edge_dirs2_;
   CorrelationKernelCache score_kernel_cache_;
 };
 

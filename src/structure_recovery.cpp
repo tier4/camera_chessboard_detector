@@ -49,29 +49,29 @@ inline float vdist(cv::Vec2f a, cv::Vec2f b)
   return std::sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]));
 }
 
-inline float vmean(std::vector<float> &resultSet)
+inline float vmean(std::vector<float> &result_set)
 {
-  double sum = std::accumulate(std::begin(resultSet), std::end(resultSet), 0.0);
-  double mean = sum / resultSet.size();
+  double sum = std::accumulate(std::begin(result_set), std::end(result_set), 0.0);
+  double mean = sum / result_set.size();
   return mean;
 }
 
-inline float vstddev(std::vector<float> &resultSet, float &mean)
+inline float vstddev(std::vector<float> &result_set, float &mean)
 {
   double accum = 0.0;
-  mean = vmean(resultSet);
-  std::for_each(std::begin(resultSet), std::end(resultSet), [&](const double d) {
-    accum += (d - mean) * (d - mean);
+  mean = vmean(result_set);
+  std::for_each(std::begin(result_set), std::end(result_set), [&](const double kD) {
+    accum += (kD - mean) * (kD - mean);
   });
-  double stdev = sqrt(accum / (resultSet.size() - 1));
+  double stdev = sqrt(accum / (result_set.size() - 1));
   return stdev;
 }
 
-inline float coeffVariation(std::vector<float> &resultSet)
+inline float coeffVariation(std::vector<float> &result_set)
 {
   float stdvalue, meanvalue;
 
-  stdvalue = vstddev(resultSet, meanvalue);
+  stdvalue = vstddev(result_set, meanvalue);
 
   return stdvalue / meanvalue;
 }
@@ -250,9 +250,9 @@ float BoardBuilder::boardEnergy(cv::Mat chessboard, CornerArray &corners)
     }
 
   // combined energy
-  float E = energy_corners + lambda * chessboard.size().area() * energy_structure;
+  float e = energy_corners + lambda * chessboard.size().area() * energy_structure;
 
-  return E;
+  return e;
 }
 
 // extrapolate the next corner from the last three along a line
@@ -297,16 +297,16 @@ void BoardBuilder::matchClosestCandidates(
   idx.resize(predicted.size());
 
   // candidate-to-prediction distance matrix
-  cv::Mat D = cv::Mat::zeros(candidates.size(), predicted.size(), CV_32FC1);
+  cv::Mat d = cv::Mat::zeros(candidates.size(), predicted.size(), CV_32FC1);
   float mind = FLT_MAX;
-  for (int i = 0; i < D.cols; i++)
+  for (int i = 0; i < d.cols; i++)
   {
     cv::Vec2f delta;
-    for (int j = 0; j < D.rows; j++)
+    for (int j = 0; j < d.rows; j++)
     {
       delta = candidates[j] - predicted[i];
       float s = vdist(delta, cv::Vec2f(0, 0));
-      D.at<float>(j, i) = s;
+      d.at<float>(j, i) = s;
       if (s < mind)
       {
         mind = s;
@@ -318,20 +318,20 @@ void BoardBuilder::matchClosestCandidates(
   for (int k = 0; k < predicted.size(); k++)
   {
     bool isbreak = false;
-    for (int i = 0; i < D.rows; i++)
+    for (int i = 0; i < d.rows; i++)
     {
-      for (int j = 0; j < D.cols; j++)
+      for (int j = 0; j < d.cols; j++)
       {
-        if (fabs(D.at<float>(i, j) - mind) < 10e-10)
+        if (fabs(d.at<float>(i, j) - mind) < 10e-10)
         {
           idx[j] = i;
-          for (int m = 0; m < D.cols; m++)
+          for (int m = 0; m < d.cols; m++)
           {
-            D.at<float>(i, m) = FLT_MAX;
+            d.at<float>(i, m) = FLT_MAX;
           }
-          for (int m = 0; m < D.rows; m++)
+          for (int m = 0; m < d.rows; m++)
           {
-            D.at<float>(m, j) = FLT_MAX;
+            d.at<float>(m, j) = FLT_MAX;
           }
           isbreak = true;
           break;
@@ -340,13 +340,13 @@ void BoardBuilder::matchClosestCandidates(
       if (isbreak == true) break;
     }
     mind = FLT_MAX;
-    for (int i = 0; i < D.rows; i++)
+    for (int i = 0; i < d.rows; i++)
     {
-      for (int j = 0; j < D.cols; j++)
+      for (int j = 0; j < d.cols; j++)
       {
-        if (D.at<float>(i, j) < mind)
+        if (d.at<float>(i, j) < mind)
         {
-          mind = D.at<float>(i, j);
+          mind = d.at<float>(i, j);
         }
       }
     }
@@ -584,8 +584,8 @@ void BoardBuilder::assembleBoards(
     {
       continue;
     }
-    float E = boardEnergy(seed, corners);
-    if (E > 0)
+    float e = boardEnergy(seed, corners);
+    if (e > 0)
     {
       continue;
     }

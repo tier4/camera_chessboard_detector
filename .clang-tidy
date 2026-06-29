@@ -1,0 +1,97 @@
+---
+Checks: >
+  -*,
+  readability-identifier-naming
+
+CheckOptions:
+  # 型
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.AbstractClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.UnionCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConceptCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeTemplateParameterCase
+    value: CamelCase
+  - key: readability-identifier-naming.TemplateTemplateParameterCase
+    value: CamelCase
+
+  # 関数・メソッド
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.MethodCase
+    value: camelBack
+
+  # namespace
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+
+  # 通常の変数・引数
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.PointerParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterPackCase
+    value: lower_case
+  - key: readability-identifier-naming.ValueTemplateParameterCase
+    value: lower_case
+
+  # 通常のメンバ
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
+
+  # private / protected メンバ
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: _
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.ProtectedMemberSuffix
+    value: _
+
+  # static な非 const class member
+  - key: readability-identifier-naming.ClassMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.ClassMemberSuffix
+    value: _
+
+  # const / constexpr
+  - key: readability-identifier-naming.ConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstantPrefix
+    value: k
+  - key: readability-identifier-naming.ConstexprVariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstexprVariablePrefix
+    value: k
+  - key: readability-identifier-naming.ConstantMemberCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstantMemberPrefix
+    value: k
+
+  # enum 値は PascalCase。k は付けない。
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.ScopedEnumConstantCase
+    value: CamelCase
+
+  # ローカル(自動変数)の const は lower_case を許容する。
+  # k 接頭辞付き CamelCase は static / グローバル定数向けの規約であり、関数ローカルの
+  # const にまで強制すると `kRowsLeft` のような不自然な要求になるため緩める。
+  # （Google スタイルでも k 接頭辞は static / グローバル定数のみで、ローカルは任意）
+  # static / グローバル定数は上の ConstantCase(= k + CamelCase) のまま維持される。
+  - key: readability-identifier-naming.LocalConstantCase
+    value: lower_case

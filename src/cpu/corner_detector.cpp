@@ -67,77 +67,78 @@ CpuCornerDetector::CpuCornerDetector(cv::Mat img)
   // one scale per radius, each with two Geiger angle templates
   for (int r : kCornerRadii)
   {
-    radius.push_back(r);
-    template_angles_.push_back(Point2f((real_t)0, (real_t)CV_PI / 2));
-    template_angles_.push_back(Point2f((real_t)CV_PI / 4, (real_t)-CV_PI / 4));
+    radius_.push_back(r);
+    template_angles_.push_back(Point2f((RealT)0, (RealT)CV_PI / 2));
+    template_angles_.push_back(Point2f((RealT)CV_PI / 4, (RealT)-CV_PI / 4));
   }
 }
 
 // Gaussian probability density (mu, sigma).
-real_t CpuCornerDetector::gaussian1d(real_t dist, real_t mu, real_t sigma)
+RealT CpuCornerDetector::gaussian1d(RealT dist, RealT mu, RealT sigma)
 {
-  real_t s = exp(-0.5 * (dist - mu) * (dist - mu) / (sigma * sigma));
+  RealT s = exp(-0.5 * (dist - mu) * (dist - mu) / (sigma * sigma));
   s = s / (std::sqrt(2 * CV_PI) * sigma);
   return s;
 }
 
 void CpuCornerDetector::buildQuadrantKernels(
-  float angle1, float angle2, int kernelSize, Mat &kernelA, Mat &kernelB, Mat &kernelC, Mat &kernelD
+  float angle1, float angle2, int kernel_size, Mat &kernel_a, Mat &kernel_b, Mat &kernel_c,
+  Mat &kernel_d
 )
 {
-  int width = (int)kernelSize * 2 + 1;
-  int height = (int)kernelSize * 2 + 1;
-  kernelA = cv::Mat::zeros(height, width, kMatDepth);
-  kernelB = cv::Mat::zeros(height, width, kMatDepth);
-  kernelC = cv::Mat::zeros(height, width, kMatDepth);
-  kernelD = cv::Mat::zeros(height, width, kMatDepth);
+  int width = (int)kernel_size * 2 + 1;
+  int height = (int)kernel_size * 2 + 1;
+  kernel_a = cv::Mat::zeros(height, width, kMatDepth);
+  kernel_b = cv::Mat::zeros(height, width, kMatDepth);
+  kernel_c = cv::Mat::zeros(height, width, kMatDepth);
+  kernel_d = cv::Mat::zeros(height, width, kMatDepth);
 
   for (int u = 0; u < width; ++u)
   {
     for (int v = 0; v < height; ++v)
     {
-      real_t vec[] = {u - kernelSize, v - kernelSize};
-      real_t dis = std::sqrt(vec[0] * vec[0] + vec[1] * vec[1]);
-      real_t side1 = vec[0] * (-sin(angle1)) + vec[1] * cos(angle1);
-      real_t side2 =
+      RealT vec[] = {static_cast<RealT>(u - kernel_size), static_cast<RealT>(v - kernel_size)};
+      RealT dis = std::sqrt(vec[0] * vec[0] + vec[1] * vec[1]);
+      RealT side1 = vec[0] * (-sin(angle1)) + vec[1] * cos(angle1);
+      RealT side2 =
         vec[0] * (-sin(angle2)) + vec[1] * cos(angle2);  // X=X0*cos+Y0*sin;Y=Y0*cos-X0*sin
       if (side1 <= -kQuadrantDeadZone && side2 <= -kQuadrantDeadZone)
       {
-        kernelA.ptr<real_t>(v)[u] = gaussian1d(dis, 0, kernelSize / 2);
+        kernel_a.ptr<RealT>(v)[u] = gaussian1d(dis, 0, kernel_size / 2);
       }
       if (side1 >= kQuadrantDeadZone && side2 >= kQuadrantDeadZone)
       {
-        kernelB.ptr<real_t>(v)[u] = gaussian1d(dis, 0, kernelSize / 2);
+        kernel_b.ptr<RealT>(v)[u] = gaussian1d(dis, 0, kernel_size / 2);
       }
       if (side1 <= -kQuadrantDeadZone && side2 >= kQuadrantDeadZone)
       {
-        kernelC.ptr<real_t>(v)[u] = gaussian1d(dis, 0, kernelSize / 2);
+        kernel_c.ptr<RealT>(v)[u] = gaussian1d(dis, 0, kernel_size / 2);
       }
       if (side1 >= kQuadrantDeadZone && side2 <= -kQuadrantDeadZone)
       {
-        kernelD.ptr<real_t>(v)[u] = gaussian1d(dis, 0, kernelSize / 2);
+        kernel_d.ptr<RealT>(v)[u] = gaussian1d(dis, 0, kernel_size / 2);
       }
     }
   }
 
-  kernelA = kernelA / cv::sum(kernelA)[0];
-  kernelB = kernelB / cv::sum(kernelB)[0];
-  kernelC = kernelC / cv::sum(kernelC)[0];
-  kernelD = kernelD / cv::sum(kernelD)[0];
+  kernel_a = kernel_a / cv::sum(kernel_a)[0];
+  kernel_b = kernel_b / cv::sum(kernel_b)[0];
+  kernel_c = kernel_c / cv::sum(kernel_c)[0];
+  kernel_d = kernel_d / cv::sum(kernel_d)[0];
 }
 
 void CpuCornerDetector::elementwiseMin(Mat src1, Mat src2, Mat &dst)
 {
-  int rowsLeft = src1.rows;
-  int colsLeft = src1.cols;
-  int rowsRight = src2.rows;
-  int colsRight = src2.cols;
-  if (rowsLeft != rowsRight || colsLeft != colsRight) return;
+  int rows_left = src1.rows;
+  int cols_left = src1.cols;
+  int rows_right = src2.rows;
+  int cols_right = src2.cols;
+  if (rows_left != rows_right || cols_left != cols_right) return;
 
   int channels = src1.channels();
 
-  int nr = rowsLeft;
-  int nc = colsLeft;
+  int nr = rows_left;
+  int nc = cols_left;
   if (src1.isContinuous())
   {
     nc = nc * nr;
@@ -145,28 +146,28 @@ void CpuCornerDetector::elementwiseMin(Mat src1, Mat src2, Mat &dst)
   }
   for (int i = 0; i < nr; i++)
   {
-    const real_t *dataLeft = src1.ptr<real_t>(i);
-    const real_t *dataRight = src2.ptr<real_t>(i);
-    real_t *dataResult = dst.ptr<real_t>(i);
+    const RealT *data_left = src1.ptr<RealT>(i);
+    const RealT *data_right = src2.ptr<RealT>(i);
+    RealT *data_result = dst.ptr<RealT>(i);
     for (int j = 0; j < nc * channels; ++j)
     {
-      dataResult[j] = (dataLeft[j] < dataRight[j]) ? dataLeft[j] : dataRight[j];
+      data_result[j] = (data_left[j] < data_right[j]) ? data_left[j] : data_right[j];
     }
   }
 }
 
 void CpuCornerDetector::elementwiseMax(Mat src1, Mat src2, Mat &dst)
 {
-  int rowsLeft = src1.rows;
-  int colsLeft = src1.cols;
-  int rowsRight = src2.rows;
-  int colsRight = src2.cols;
-  if (rowsLeft != rowsRight || colsLeft != colsRight) return;
+  int rows_left = src1.rows;
+  int cols_left = src1.cols;
+  int rows_right = src2.rows;
+  int cols_right = src2.cols;
+  if (rows_left != rows_right || cols_left != cols_right) return;
 
   int channels = src1.channels();
 
-  int nr = rowsLeft;
-  int nc = colsLeft;
+  int nr = rows_left;
+  int nc = cols_left;
   if (src1.isContinuous())
   {
     nc = nc * nr;
@@ -174,88 +175,88 @@ void CpuCornerDetector::elementwiseMax(Mat src1, Mat src2, Mat &dst)
   }
   for (int i = 0; i < nr; i++)
   {
-    const real_t *dataLeft = src1.ptr<real_t>(i);
-    const real_t *dataRight = src2.ptr<real_t>(i);
-    real_t *dataResult = dst.ptr<real_t>(i);
+    const RealT *data_left = src1.ptr<RealT>(i);
+    const RealT *data_right = src2.ptr<RealT>(i);
+    RealT *data_result = dst.ptr<RealT>(i);
     for (int j = 0; j < nc * channels; ++j)
     {
-      dataResult[j] = (dataLeft[j] >= dataRight[j]) ? dataLeft[j] : dataRight[j];
+      data_result[j] = (data_left[j] >= data_right[j]) ? data_left[j] : data_right[j];
     }
   }
 }
 
 void CpuCornerDetector::computeGradientOrientation(
-  Mat img, Mat &imgDu, Mat &imgDv, Mat &imgAngle, Mat &imgWeight
+  Mat img, Mat &img_du, Mat &img_dv, Mat &img_angle, Mat &img_weight
 )
 {
-  Mat sobelKernel(3, 3, kMatDepth);
-  Mat sobelKernelTrs(3, 3, kMatDepth);
+  Mat sobel_kernel(3, 3, kMatDepth);
+  Mat sobel_kernel_trs(3, 3, kMatDepth);
 
-  sobelKernel.col(0).setTo(cv::Scalar(-1.0));
-  sobelKernel.col(1).setTo(cv::Scalar(0.0));
-  sobelKernel.col(2).setTo(cv::Scalar(1.0));
+  sobel_kernel.col(0).setTo(cv::Scalar(-1.0));
+  sobel_kernel.col(1).setTo(cv::Scalar(0.0));
+  sobel_kernel.col(2).setTo(cv::Scalar(1.0));
 
-  sobelKernelTrs = sobelKernel.t();
+  sobel_kernel_trs = sobel_kernel.t();
 
-  imgDu = conv2(img, sobelKernel, CONVOLUTION_SAME);
-  imgDv = conv2(img, sobelKernelTrs, CONVOLUTION_SAME);
+  img_du = conv2(img, sobel_kernel, ConvolutionSame);
+  img_dv = conv2(img, sobel_kernel_trs, ConvolutionSame);
 
-  if (imgDu.size() != imgDv.size()) return;
+  if (img_du.size() != img_dv.size()) return;
 
-  cartToPolar(imgDu, imgDv, imgWeight, imgAngle, false);
-  for (int i = 0; i < imgDu.rows; i++)
+  cartToPolar(img_du, img_dv, img_weight, img_angle, false);
+  for (int i = 0; i < img_du.rows; i++)
   {
-    for (int j = 0; j < imgDu.cols; j++)
+    for (int j = 0; j < img_du.cols; j++)
     {
-      real_t *dataAngle = imgAngle.ptr<real_t>(i);
-      if (dataAngle[j] < 0)
-        dataAngle[j] = dataAngle[j] + CV_PI;
-      else if (dataAngle[j] > CV_PI)
-        dataAngle[j] = dataAngle[j] - CV_PI;
+      RealT *data_angle = img_angle.ptr<RealT>(i);
+      if (data_angle[j] < 0)
+        data_angle[j] = data_angle[j] + CV_PI;
+      else if (data_angle[j] > CV_PI)
+        data_angle[j] = data_angle[j] - CV_PI;
     }
   }
 }
 
 void CpuCornerDetector::nonMaxSuppress(
-  Mat &inputCorners, vector<Point2f> &outputCorners, int patchSize, real_t threshold, int margin
+  Mat &input_corners, vector<Point2f> &output_corners, int patch_size, RealT threshold, int margin
 )
 {
-  if (inputCorners.empty())
+  if (input_corners.empty())
   {
     return;
   }
-  for (int i = margin + patchSize; i <= inputCorners.cols - (margin + patchSize + 1);
-       i = i + patchSize + 1)
+  for (int i = margin + patch_size; i <= input_corners.cols - (margin + patch_size + 1);
+       i = i + patch_size + 1)
   {
-    for (int j = margin + patchSize; j <= inputCorners.rows - (margin + patchSize + 1);
-         j = j + patchSize + 1)
+    for (int j = margin + patch_size; j <= input_corners.rows - (margin + patch_size + 1);
+         j = j + patch_size + 1)
     {
-      real_t maxVal = inputCorners.ptr<real_t>(j)[i];
-      int maxX = i;
-      int maxY = j;
-      for (int m = i; m <= i + patchSize; m++)
+      RealT max_val = input_corners.ptr<RealT>(j)[i];
+      int max_x = i;
+      int max_y = j;
+      for (int m = i; m <= i + patch_size; m++)
       {
-        for (int n = j; n <= j + patchSize; n++)
+        for (int n = j; n <= j + patch_size; n++)
         {
-          real_t temp = inputCorners.ptr<real_t>(n)[m];
-          if (temp > maxVal)
+          RealT temp = input_corners.ptr<RealT>(n)[m];
+          if (temp > max_val)
           {
-            maxVal = temp;
-            maxX = m;
-            maxY = n;
+            max_val = temp;
+            max_x = m;
+            max_y = n;
           }
         }
       }
-      if (maxVal < threshold) continue;
+      if (max_val < threshold) continue;
       int flag = 0;
-      for (int m = maxX - patchSize; m <= min(maxX + patchSize, inputCorners.cols - margin - 1);
-           m++)
+      for (int m = max_x - patch_size;
+           m <= min(max_x + patch_size, input_corners.cols - margin - 1); m++)
       {
-        for (int n = maxY - patchSize; n <= min(maxY + patchSize, inputCorners.rows - margin - 1);
-             n++)
+        for (int n = max_y - patch_size;
+             n <= min(max_y + patch_size, input_corners.rows - margin - 1); n++)
         {
-          if (inputCorners.ptr<real_t>(n)[m] > maxVal &&
-              (m < i || m > i + patchSize || n < j || n > j + patchSize))
+          if (input_corners.ptr<RealT>(n)[m] > max_val &&
+              (m < i || m > i + patch_size || n < j || n > j + patch_size))
           {
             flag = 1;
             break;
@@ -264,28 +265,28 @@ void CpuCornerDetector::nonMaxSuppress(
         if (flag) break;
       }
       if (flag) continue;
-      outputCorners.push_back(Point(maxX, maxY));
-      std::vector<real_t> e1(2, 0.0);
-      std::vector<real_t> e2(2, 0.0);
+      output_corners.push_back(Point(max_x, max_y));
+      std::vector<RealT> e1(2, 0.0);
+      std::vector<RealT> e2(2, 0.0);
       edge_dirs1_.push_back(e1);
       edge_dirs2_.push_back(e2);
     }
   }
 }
 
-int cmp(const pair<real_t, int> &a, const pair<real_t, int> &b) { return a.first > b.first; }
+int cmp(const pair<RealT, int> &a, const pair<RealT, int> &b) { return a.first > b.first; }
 
 // locate the peaks of the smoothed histogram
 void CpuCornerDetector::findHistogramModes(
-  vector<real_t> hist, vector<real_t> &hist_smoothed, vector<pair<real_t, int>> &modes, real_t sigma
+  vector<RealT> hist, vector<RealT> &hist_smoothed, vector<pair<RealT, int>> &modes, RealT sigma
 )
 {
   // approximate mean-shift by histogram smoothing, then hill-climb
   // smooth the histogram
-  bool allZeros = true;
+  bool all_zeros = true;
   for (int i = 0; i < hist.size(); i++)
   {
-    real_t sum = 0;
+    RealT sum = 0;
     for (int j = -(int)round(2 * sigma); j <= (int)round(2 * sigma); j++)
     {
       int idx = 0;
@@ -294,10 +295,10 @@ void CpuCornerDetector::findHistogramModes(
     }
     hist_smoothed[i] = sum;
     if (abs(hist_smoothed[i] - hist_smoothed[0]) > kFlatHistEps)
-      allZeros = false;  // check if at least one entry is non - zero
+      all_zeros = false;  // check if at least one entry is non - zero
     // (a flat histogram would otherwise loop forever)
   }
-  if (allZeros) return;
+  if (all_zeros) return;
 
   // hill-climb each bin to its local peak
   for (int i = 0; i < hist.size(); i++)
@@ -342,41 +343,41 @@ void CpuCornerDetector::findHistogramModes(
 }
 
 // estimate the two dominant edge orientations at a corner
-void CpuCornerDetector::estimateEdgeOrientations(Mat imgAngle, Mat imgWeight, int index)
+void CpuCornerDetector::estimateEdgeOrientations(Mat img_angle, Mat img_weight, int index)
 {
   // orientation histogram resolution
   int num_bins = kOrientationBins;
 
   // flatten the ROI into angle / weight samples
-  if (imgAngle.size() != imgWeight.size()) return;
+  if (img_angle.size() != img_weight.size()) return;
 
-  vector<real_t> vec_angle, vec_weight;
-  for (int i = 0; i < imgAngle.cols; i++)
+  vector<RealT> vec_angle, vec_weight;
+  for (int i = 0; i < img_angle.cols; i++)
   {
-    for (int j = 0; j < imgAngle.rows; j++)
+    for (int j = 0; j < img_angle.rows; j++)
     {
       // rotate normals by 90deg to get edge directions
-      float angle = imgAngle.ptr<real_t>(j)[i] + CV_PI / 2;
+      float angle = img_angle.ptr<RealT>(j)[i] + CV_PI / 2;
       angle = angle > CV_PI ? (angle - CV_PI) : angle;
       vec_angle.push_back(angle);
 
-      vec_weight.push_back(imgWeight.ptr<real_t>(j)[i]);
+      vec_weight.push_back(img_weight.ptr<RealT>(j)[i]);
     }
   }
 
   // weighted orientation histogram
-  real_t bin_width = (CV_PI / num_bins);
-  vector<real_t> angleHist(num_bins, 0);
+  RealT bin_width = (CV_PI / num_bins);
+  vector<RealT> angle_hist(num_bins, 0);
   for (int i = 0; i < vec_angle.size(); i++)
   {
     int bin = max(min((int)floor(vec_angle[i] / bin_width), num_bins - 1), 0);
-    angleHist[bin] = angleHist[bin] + vec_weight[i];
+    angle_hist[bin] = angle_hist[bin] + vec_weight[i];
   }
 
   // peaks of the smoothed histogram
-  vector<real_t> hist_smoothed(angleHist);
-  vector<std::pair<real_t, int>> modes;
-  findHistogramModes(angleHist, hist_smoothed, modes, 1);
+  vector<RealT> hist_smoothed(angle_hist);
+  vector<std::pair<RealT, int>> modes;
+  findHistogramModes(angle_hist, hist_smoothed, modes, 1);
 
   // need at least two distinct orientations
   if (modes.size() <= 1) return;
@@ -385,17 +386,17 @@ void CpuCornerDetector::estimateEdgeOrientations(Mat imgAngle, Mat imgWeight, in
   float fo[2];
   fo[0] = modes[0].second * bin_width;
   fo[1] = modes[1].second * bin_width;
-  real_t deltaAngle = 0;
+  RealT delta_angle = 0;
   if (fo[0] > fo[1])
   {
-    real_t t = fo[0];
+    RealT t = fo[0];
     fo[0] = fo[1];
     fo[1] = t;
   }
 
-  deltaAngle = MIN(fo[1] - fo[0], fo[0] - fo[1] + (real_t)CV_PI);
+  delta_angle = MIN(fo[1] - fo[0], fo[0] - fo[1] + (RealT)CV_PI);
   // reject near-parallel edge pairs
-  if (deltaAngle <= kMinEdgeAngleRad) return;
+  if (delta_angle <= kMinEdgeAngleRad) return;
 
   // store the two edge unit vectors
   edge_dirs1_[index][0] = cos(fo[0]);
@@ -407,12 +408,12 @@ void CpuCornerDetector::estimateEdgeOrientations(Mat imgAngle, Mat imgWeight, in
 float CpuCornerDetector::vecNorm(cv::Point2f o) { return sqrt(o.x * o.x + o.y * o.y); }
 
 void CpuCornerDetector::refineCornersSubpixel(
-  vector<Point2f> &corners, Mat imgDu, Mat imgDv, Mat imgAngle, Mat imgWeight, float radius
+  vector<Point2f> &corners, Mat img_du, Mat img_dv, Mat img_angle, Mat img_weight, float radius
 )
 {
   // image dimensions
-  int width = imgDu.cols;
-  int height = imgDu.rows;
+  int width = img_du.cols;
+  int height = img_du.rows;
 
   // for all corners do
   for (int i = 0; i < corners.size(); i++)
@@ -421,82 +422,82 @@ void CpuCornerDetector::refineCornersSubpixel(
     int cu = corners[i].x;
     int cv = corners[i].y;
     // estimate edge orientations
-    int startX, startY, ROIwidth, ROIheight;
-    startX = MAX(cu - radius, (real_t)0);
-    startY = MAX(cv - radius, (real_t)0);
-    ROIwidth = MIN(cu + radius + 1, (real_t)width - 1) - startX;
-    ROIheight = MIN(cv + radius + 1, (real_t)height - 1) - startY;
+    int start_x, start_y, ro_iwidth, ro_iheight;
+    start_x = MAX(cu - radius, (RealT)0);
+    start_y = MAX(cv - radius, (RealT)0);
+    ro_iwidth = MIN(cu + radius + 1, (RealT)width - 1) - start_x;
+    ro_iheight = MIN(cv + radius + 1, (RealT)height - 1) - start_y;
 
-    Mat roiAngle, roiWeight;
-    roiAngle = imgAngle(Rect(startX, startY, ROIwidth, ROIheight));
-    roiWeight = imgWeight(Rect(startX, startY, ROIwidth, ROIheight));
-    estimateEdgeOrientations(roiAngle, roiWeight, i);
+    Mat roi_angle, roi_weight;
+    roi_angle = img_angle(Rect(start_x, start_y, ro_iwidth, ro_iheight));
+    roi_weight = img_weight(Rect(start_x, start_y, ro_iwidth, ro_iheight));
+    estimateEdgeOrientations(roi_angle, roi_weight, i);
 
     // skip corners with degenerate edges
     if (edge_dirs1_[i][0] == 0 && edge_dirs1_[i][1] == 0 ||
         edge_dirs2_[i][0] == 0 && edge_dirs2_[i][1] == 0)
       continue;
 
-    cv::Mat A1 = cv::Mat::zeros(cv::Size(2, 2), kMatDepth);
-    cv::Mat A2 = cv::Mat::zeros(cv::Size(2, 2), kMatDepth);
+    cv::Mat a1 = cv::Mat::zeros(cv::Size(2, 2), kMatDepth);
+    cv::Mat a2 = cv::Mat::zeros(cv::Size(2, 2), kMatDepth);
 
-    for (int u = startX; u < startX + ROIwidth; u++)
-      for (int v = startY; v < startY + ROIheight; v++)
+    for (int u = start_x; u < start_x + ro_iwidth; u++)
+      for (int v = start_y; v < start_y + ro_iheight; v++)
       {
         // gradient direction at this pixel
-        cv::Point2f o(imgDu.at<real_t>(v, u), imgDv.at<real_t>(v, u));
+        cv::Point2f o(img_du.at<RealT>(v, u), img_dv.at<RealT>(v, u));
         float no = vecNorm(o);
 
         if (no < kMinGradNorm) continue;
         o = o / no;
         // accumulate inliers for edge 1
-        real_t t0 = abs(o.x * edge_dirs1_[i][0] + o.y * edge_dirs1_[i][1]);
+        RealT t0 = abs(o.x * edge_dirs1_[i][0] + o.y * edge_dirs1_[i][1]);
         if (t0 < kInlierCos)
         {  // inlier ?
           Mat outer(1, 2, kMatDepth);
-          outer.col(0).setTo(imgDu.at<real_t>(v, u));
-          outer.col(1).setTo(imgDv.at<real_t>(v, u));
-          Mat outer_u = imgDu.at<real_t>(v, u) * outer;
-          Mat outer_v = imgDv.at<real_t>(v, u) * outer;
-          for (int j = 0; j < A1.cols; j++)
+          outer.col(0).setTo(img_du.at<RealT>(v, u));
+          outer.col(1).setTo(img_dv.at<RealT>(v, u));
+          Mat outer_u = img_du.at<RealT>(v, u) * outer;
+          Mat outer_v = img_dv.at<RealT>(v, u) * outer;
+          for (int j = 0; j < a1.cols; j++)
           {
-            A1.at<real_t>(0, j) = A1.at<real_t>(0, j) + outer_u.at<real_t>(0, j);
-            A1.at<real_t>(1, j) = A1.at<real_t>(1, j) + outer_v.at<real_t>(0, j);
+            a1.at<RealT>(0, j) = a1.at<RealT>(0, j) + outer_u.at<RealT>(0, j);
+            a1.at<RealT>(1, j) = a1.at<RealT>(1, j) + outer_v.at<RealT>(0, j);
           }
         }
         // accumulate inliers for edge 2
-        real_t t1 = abs(o.x * edge_dirs2_[i][0] + o.y * edge_dirs2_[i][1]);
+        RealT t1 = abs(o.x * edge_dirs2_[i][0] + o.y * edge_dirs2_[i][1]);
         if (t1 < kInlierCos)
         {  // inlier ?
           Mat outer(1, 2, kMatDepth);
-          outer.col(0).setTo(imgDu.at<real_t>(v, u));
-          outer.col(1).setTo(imgDv.at<real_t>(v, u));
-          Mat outer_u = imgDu.at<real_t>(v, u) * outer;
-          Mat outer_v = imgDv.at<real_t>(v, u) * outer;
-          for (int j = 0; j < A2.cols; j++)
+          outer.col(0).setTo(img_du.at<RealT>(v, u));
+          outer.col(1).setTo(img_dv.at<RealT>(v, u));
+          Mat outer_u = img_du.at<RealT>(v, u) * outer;
+          Mat outer_v = img_dv.at<RealT>(v, u) * outer;
+          for (int j = 0; j < a2.cols; j++)
           {
-            A2.at<real_t>(0, j) = A2.at<real_t>(0, j) + outer_u.at<real_t>(0, j);
-            A2.at<real_t>(1, j) = A2.at<real_t>(1, j) + outer_v.at<real_t>(0, j);
+            a2.at<RealT>(0, j) = a2.at<RealT>(0, j) + outer_u.at<RealT>(0, j);
+            a2.at<RealT>(1, j) = a2.at<RealT>(1, j) + outer_v.at<RealT>(0, j);
           }
         }
       }  // end for
     // refined orientation = smallest eigenvector of each scatter matrix
     cv::Mat v1, evec1;
     cv::Mat v2, evec2;
-    cv::eigen(A1, v1, evec1);
-    cv::eigen(A2, v2, evec2);
-    edge_dirs1_[i][0] = -evec1.at<real_t>(1, 0);
-    edge_dirs1_[i][1] = -evec1.at<real_t>(1, 1);
-    edge_dirs2_[i][0] = -evec2.at<real_t>(1, 0);
-    edge_dirs2_[i][1] = -evec2.at<real_t>(1, 1);
+    cv::eigen(a1, v1, evec1);
+    cv::eigen(a2, v2, evec2);
+    edge_dirs1_[i][0] = -evec1.at<RealT>(1, 0);
+    edge_dirs1_[i][1] = -evec1.at<RealT>(1, 1);
+    edge_dirs2_[i][0] = -evec2.at<RealT>(1, 0);
+    edge_dirs2_[i][1] = -evec2.at<RealT>(1, 1);
 
-    cv::Mat G = cv::Mat::zeros(cv::Size(2, 2), kMatDepth);
+    cv::Mat g = cv::Mat::zeros(cv::Size(2, 2), kMatDepth);
     cv::Mat b = cv::Mat::zeros(cv::Size(1, 2), kMatDepth);
-    for (int u = startX; u < startX + ROIwidth; u++)
-      for (int v = startY; v < startY + ROIheight; v++)
+    for (int u = start_x; u < start_x + ro_iwidth; u++)
+      for (int v = start_y; v < start_y + ro_iheight; v++)
       {
         // gradient direction at this pixel
-        cv::Point2f o(imgDu.at<real_t>(v, u), imgDv.at<real_t>(v, u));
+        cv::Point2f o(img_du.at<RealT>(v, u), img_dv.at<RealT>(v, u));
         float no = vecNorm(o);
         if (no < kMinGradNorm) continue;
         o = o / no;
@@ -512,18 +513,18 @@ void CpuCornerDetector::refineCornersSubpixel(
           cv::Point2f wv2(proj2 * edge_dirs2_[i][0], proj2 * edge_dirs2_[i][1]);
           cv::Point2f vd1(w.x - wv1.x, w.y - wv1.y);
           cv::Point2f vd2(w.x - wv2.x, w.y - wv2.y);
-          real_t d1 = vecNorm(vd1), d2 = vecNorm(vd2);
+          RealT d1 = vecNorm(vd1), d2 = vecNorm(vd2);
           // pixel lies on one of the two edges
           if ((d1 < kEdgeDistPx) &&
                 abs(o.x * edge_dirs1_[i][0] + o.y * edge_dirs1_[i][1]) < kInlierCos ||
               (d2 < kEdgeDistPx) &&
                 abs(o.x * edge_dirs2_[i][0] + o.y * edge_dirs2_[i][1]) < kInlierCos)
           {
-            real_t du = imgDu.at<real_t>(v, u), dv = imgDv.at<real_t>(v, u);
-            cv::Mat uvt = (Mat_<real_t>(2, 1) << u, v);
-            cv::Mat H = (Mat_<real_t>(2, 2) << du * du, du * dv, dv * du, dv * dv);
-            G = G + H;
-            cv::Mat t = H * (uvt);
+            RealT du = img_du.at<RealT>(v, u), dv = img_dv.at<RealT>(v, u);
+            cv::Mat uvt = (Mat_<RealT>(2, 1) << u, v);
+            cv::Mat h = (Mat_<RealT>(2, 2) << du * du, du * dv, dv * du, dv * dv);
+            g = g + h;
+            cv::Mat t = h * (uvt);
             b = b + t;
           }
         }
@@ -531,19 +532,19 @@ void CpuCornerDetector::refineCornersSubpixel(
     // solve for the sub-pixel corner when well-conditioned
 
     Mat s, u, v;
-    SVD::compute(G, s, u, v);
+    SVD::compute(g, s, u, v);
     int rank = 0;
     for (int k = 0; k < s.rows; k++)
     {
-      if (s.at<real_t>(k, 0) > kSvdRankEps || s.at<real_t>(k, 0) < -kSvdRankEps)
+      if (s.at<RealT>(k, 0) > kSvdRankEps || s.at<RealT>(k, 0) < -kSvdRankEps)
       {  // treat as non-zero
         rank++;
       }
     }
     if (rank == 2)
     {
-      cv::Mat mp = G.inv() * b;
-      cv::Point2f new_pos(mp.at<real_t>(0, 0), mp.at<real_t>(1, 0));
+      cv::Mat mp = g.inv() * b;
+      cv::Point2f new_pos(mp.at<RealT>(0, 0), mp.at<RealT>(1, 0));
       // discard if the update jumps too far
       if (vecNorm(cv::Point2f(new_pos.x - cu, new_pos.y - cv)) >= kMaxCornerShiftPx)
       {
@@ -554,8 +555,8 @@ void CpuCornerDetector::refineCornersSubpixel(
       }
       else
       {
-        corners[i].x = mp.at<real_t>(0, 0);
-        corners[i].y = mp.at<real_t>(1, 0);
+        corners[i].x = mp.at<RealT>(0, 0);
+        corners[i].y = mp.at<RealT>(1, 0);
       }
     }
     else
@@ -570,61 +571,60 @@ void CpuCornerDetector::refineCornersSubpixel(
 
 // correlation score for one corner patch
 void CpuCornerDetector::correlationScore(
-  Mat img, Mat imgWeight, vector<Point2f> cornersEdge, float &score
+  Mat img, Mat img_weight, vector<Point2f> corners_edge, float &score
 )
 {
   // center
-  int c[] = {imgWeight.cols / 2, imgWeight.cols / 2};
+  int c[] = {img_weight.cols / 2, img_weight.cols / 2};
 
   // gradient template mask (~3 px band)
-  Mat img_filter = Mat::ones(imgWeight.size(), imgWeight.type());
+  Mat img_filter = Mat::ones(img_weight.size(), img_weight.type());
   img_filter = img_filter * -1;
-  for (int i = 0; i < imgWeight.cols; i++)
+  for (int i = 0; i < img_weight.cols; i++)
   {
-    for (int j = 0; j < imgWeight.rows; j++)
+    for (int j = 0; j < img_weight.rows; j++)
     {
       Point2f p1 = Point2f(i - c[0], j - c[1]);
       Point2f p2 = Point2f(
-        p1.x * cornersEdge[0].x * cornersEdge[0].x + p1.y * cornersEdge[0].x * cornersEdge[0].y,
-        p1.x * cornersEdge[0].x * cornersEdge[0].y + p1.y * cornersEdge[0].y * cornersEdge[0].y
+        p1.x * corners_edge[0].x * corners_edge[0].x + p1.y * corners_edge[0].x * corners_edge[0].y,
+        p1.x * corners_edge[0].x * corners_edge[0].y + p1.y * corners_edge[0].y * corners_edge[0].y
       );
       Point2f p3 = Point2f(
-        p1.x * cornersEdge[1].x * cornersEdge[1].x + p1.y * cornersEdge[1].x * cornersEdge[1].y,
-        p1.x * cornersEdge[1].x * cornersEdge[1].y + p1.y * cornersEdge[1].y * cornersEdge[1].y
+        p1.x * corners_edge[1].x * corners_edge[1].x + p1.y * corners_edge[1].x * corners_edge[1].y,
+        p1.x * corners_edge[1].x * corners_edge[1].y + p1.y * corners_edge[1].y * corners_edge[1].y
       );
       float norm1 = sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
       float norm2 = sqrt((p1.x - p3.x) * (p1.x - p3.x) + (p1.y - p3.y) * (p1.y - p3.y));
       if (norm1 <= kGradientBandPx || norm2 <= kGradientBandPx)
       {
-        img_filter.ptr<real_t>(j)[i] = 1;
+        img_filter.ptr<RealT>(j)[i] = 1;
       }
     }
   }
 
   // normalize
   Mat mean, std, mean1, std1;
-  meanStdDev(imgWeight, mean, std);
+  meanStdDev(img_weight, mean, std);
   meanStdDev(img_filter, mean1, std1);
-  for (int i = 0; i < imgWeight.cols; i++)
+  for (int i = 0; i < img_weight.cols; i++)
   {
-    for (int j = 0; j < imgWeight.rows; j++)
+    for (int j = 0; j < img_weight.rows; j++)
     {
-      imgWeight.ptr<real_t>(j)[i] = (real_t)(imgWeight.ptr<real_t>(j)[i] - mean.ptr<double>(0)[0]) /
-                                    (real_t)std.ptr<double>(0)[0];
-      img_filter.ptr<real_t>(j)[i] =
-        (real_t)(img_filter.ptr<real_t>(j)[i] - mean1.ptr<double>(0)[0]) /
-        (real_t)std1.ptr<double>(0)[0];
+      img_weight.ptr<RealT>(j)[i] = (RealT)(img_weight.ptr<RealT>(j)[i] - mean.ptr<double>(0)[0]) /
+                                    (RealT)std.ptr<double>(0)[0];
+      img_filter.ptr<RealT>(j)[i] = (RealT)(img_filter.ptr<RealT>(j)[i] - mean1.ptr<double>(0)[0]) /
+                                    (RealT)std1.ptr<double>(0)[0];
     }
   }
 
   // convert into vectors
   vector<float> vec_filter, vec_weight;
-  for (int i = 0; i < imgWeight.cols; i++)
+  for (int i = 0; i < img_weight.cols; i++)
   {
-    for (int j = 0; j < imgWeight.rows; j++)
+    for (int j = 0; j < img_weight.rows; j++)
     {
-      vec_filter.push_back(img_filter.ptr<real_t>(j)[i]);
-      vec_weight.push_back(imgWeight.ptr<real_t>(j)[i]);
+      vec_filter.push_back(img_filter.ptr<RealT>(j)[i]);
+      vec_weight.push_back(img_weight.ptr<RealT>(j)[i]);
     }
   }
 
@@ -634,12 +634,12 @@ void CpuCornerDetector::correlationScore(
   {
     sum += vec_weight[i] * vec_filter[i];
   }
-  sum = (real_t)sum / (real_t)(vec_weight.size() - 1);
-  real_t gradient_score = sum >= 0 ? sum : 0;
+  sum = (RealT)sum / (RealT)(vec_weight.size() - 1);
+  RealT gradient_score = sum >= 0 ? sum : 0;
 
   // intensity quadrant kernels
   const camera_chessboard_detector::CorrelationKernelSet &kernels = score_kernel_cache_.get(
-    atan2(cornersEdge[0].y, cornersEdge[0].x), atan2(cornersEdge[1].y, cornersEdge[1].x), c[0]
+    atan2(corners_edge[0].y, corners_edge[0].x), atan2(corners_edge[1].y, corners_edge[1].x), c[0]
   );
 
   // the four quadrant responses
@@ -666,7 +666,7 @@ void CpuCornerDetector::correlationScore(
 
 // score every corner across the radius sweep
 void CpuCornerDetector::scoreAllCorners(
-  Mat img, Mat imgAngle, Mat imgWeight, vector<Point2f> &corners, vector<int> radius,
+  Mat img, Mat img_angle, Mat img_weight, vector<Point2f> &corners, vector<int> radius,
   vector<float> &score
 )
 {
@@ -685,18 +685,18 @@ void CpuCornerDetector::scoreAllCorners(
       int r = radius[j];
       if (u > r && u <= (img.cols - r - 1) && v > r && v <= (img.rows - r - 1))
       {
-        int startX, startY, ROIwidth, ROIheight;
-        startX = u - r;
-        startY = v - r;
-        ROIwidth = 2 * r + 1;
-        ROIheight = 2 * r + 1;
+        int start_x, start_y, ro_iwidth, ro_iheight;
+        start_x = u - r;
+        start_y = v - r;
+        ro_iwidth = 2 * r + 1;
+        ro_iheight = 2 * r + 1;
 
-        Mat sub_img = img(Rect(startX, startY, ROIwidth, ROIheight)).clone();
-        Mat sub_imgWeight = imgWeight(Rect(startX, startY, ROIwidth, ROIheight)).clone();
-        vector<Point2f> cornersEdge;
-        cornersEdge.push_back(Point2f((float)edge_dirs1_[i][0], (float)edge_dirs1_[i][1]));
-        cornersEdge.push_back(Point2f((float)edge_dirs2_[i][0], (float)edge_dirs2_[i][1]));
-        correlationScore(sub_img, sub_imgWeight, cornersEdge, scores[j]);
+        Mat sub_img = img(Rect(start_x, start_y, ro_iwidth, ro_iheight)).clone();
+        Mat sub_img_weight = img_weight(Rect(start_x, start_y, ro_iwidth, ro_iheight)).clone();
+        vector<Point2f> corners_edge;
+        corners_edge.push_back(Point2f((float)edge_dirs1_[i][0], (float)edge_dirs1_[i][1]));
+        corners_edge.push_back(Point2f((float)edge_dirs2_[i][0], (float)edge_dirs2_[i][1]));
+        correlationScore(sub_img, sub_img_weight, corners_edge, scores[j]);
       }
     }
     // keep the best radius
@@ -706,41 +706,41 @@ void CpuCornerDetector::scoreAllCorners(
 
 void CpuCornerDetector::buildLikelihoodMap(cv::Mat &src, cv::Mat &dst)
 {
-  Mat respA(src.size(), kMatDepth);
-  Mat respB(src.size(), kMatDepth);
-  Mat respC(src.size(), kMatDepth);
-  Mat respD(src.size(), kMatDepth);
+  Mat resp_a(src.size(), kMatDepth);
+  Mat resp_b(src.size(), kMatDepth);
+  Mat resp_c(src.size(), kMatDepth);
+  Mat resp_d(src.size(), kMatDepth);
 
-  Mat lowA(src.size(), kMatDepth);
-  Mat lowB(src.size(), kMatDepth);
+  Mat low_a(src.size(), kMatDepth);
+  Mat low_b(src.size(), kMatDepth);
   Mat cand1(src.size(), kMatDepth);
   Mat cand2(src.size(), kMatDepth);
   Mat mean_resp(src.size(), kMatDepth);
 
   for (int i = 0; i < 6; i++)
   {
-    Mat kA, kB, kC, kD;
+    Mat k_a, k_b, k_c, k_d;
     buildQuadrantKernels(
-      template_angles_[i].x, template_angles_[i].y, radius[i / 2], kA, kB, kC, kD
+      template_angles_[i].x, template_angles_[i].y, radius_[i / 2], k_a, k_b, k_c, k_d
     );
 
     // correlate the image with the four quadrant kernels
-    respA = conv2(src, kA, CONVOLUTION_SAME);
-    respB = conv2(src, kB, CONVOLUTION_SAME);
-    respC = conv2(src, kC, CONVOLUTION_SAME);
-    respD = conv2(src, kD, CONVOLUTION_SAME);
+    resp_a = conv2(src, k_a, ConvolutionSame);
+    resp_b = conv2(src, k_b, ConvolutionSame);
+    resp_c = conv2(src, k_c, ConvolutionSame);
+    resp_d = conv2(src, k_d, ConvolutionSame);
 
     // compute mean
-    mean_resp = (respA + respB + respC + respD) / 4.0;
+    mean_resp = (resp_a + resp_b + resp_c + resp_d) / 4.0;
 
     // case 1: a = white, b = black
-    elementwiseMin(respA - mean_resp, respB - mean_resp, lowA);
-    elementwiseMin(mean_resp - respC, mean_resp - respD, lowB);
-    elementwiseMin(lowA, lowB, cand1);
+    elementwiseMin(resp_a - mean_resp, resp_b - mean_resp, low_a);
+    elementwiseMin(mean_resp - resp_c, mean_resp - resp_d, low_b);
+    elementwiseMin(low_a, low_b, cand1);
     // case 2: b = white, a = black
-    elementwiseMin(mean_resp - respA, mean_resp - respB, lowA);
-    elementwiseMin(respC - mean_resp, respD - mean_resp, lowB);
-    elementwiseMin(lowA, lowB, cand2);
+    elementwiseMin(mean_resp - resp_a, mean_resp - resp_b, low_a);
+    elementwiseMin(resp_c - mean_resp, resp_d - mean_resp, low_b);
+    elementwiseMin(low_a, low_b, cand2);
 
     // keep the per-pixel maximum
     elementwiseMax(dst, cand1, dst);
@@ -749,7 +749,7 @@ void CpuCornerDetector::buildLikelihoodMap(cv::Mat &src, cv::Mat &dst)
 }
 
 void CpuCornerDetector::detect(
-  Mat &src, CornerCandidates &mcorners, real_t scoreThreshold, RefinementOption refinementOption
+  Mat &src, CornerCandidates &mcorners, RealT score_threshold, RefinementOption refinement_option
 )
 {
   Mat gray, normalized;
@@ -787,7 +787,7 @@ void CpuCornerDetector::detect(
 
   computeGradientOrientation(normalized, grad_x, grad_y, angle_map, weight_map);
 
-  if (refinementOption == RefinementOption::DO_REFINE)
+  if (refinement_option == RefinementOption::DoRefine)
   {
     // subpixel refinement
     refineCornersSubpixel(corner_points_, grad_x, grad_y, angle_map, weight_map, kRefineRadiusPx);
@@ -808,7 +808,7 @@ void CpuCornerDetector::detect(
 
   // score corners
   vector<float> score;
-  scoreAllCorners(normalized, angle_map, weight_map, corner_points_, radius, score);
+  scoreAllCorners(normalized, angle_map, weight_map, corner_points_, radius_, score);
 
   // keep only corners above the score threshold
   int nlen = corner_points_.size();
@@ -816,7 +816,7 @@ void CpuCornerDetector::detect(
   {
     for (int i = 0; i < nlen; i++)
     {
-      if (score[i] > scoreThreshold)
+      if (score[i] > score_threshold)
       {
         mcorners.p.push_back(corner_points_[i]);
         mcorners.v1.push_back(cv::Vec2f(edge_dirs1_[i][0], edge_dirs1_[i][1]));

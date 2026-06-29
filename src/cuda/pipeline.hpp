@@ -41,21 +41,21 @@ class CudaDetectorImpl;
 class CudaLikelihoodEstimator
 {
   enum {
-    NUM_KERNELS = 4,
+    NumKernels = 4,
   };
 
 public:
   CudaLikelihoodEstimator() {}
   ~CudaLikelihoodEstimator() {}
 
-  inline void set_kernel(int index, GpuKernelPtr &&kernel) { kernels_[index] = std::move(kernel); }
+  inline void setKernel(int index, GpuKernelPtr &&kernel) { kernels_[index] = std::move(kernel); }
 
   // Opt-in: configure the estimator to dispatch map-gen via
   // the SVD-separable path with the requested rank (<= 0 = full rank
   // = kernel side length). Call before configureKernels(). When
   // left false, behaviour is bit-stable with the historical dense
   // dense-convolution path.
-  inline void set_use_separable(bool enable, int rank)
+  inline void setUseSeparable(bool enable, int rank)
   {
     use_separable_ = enable;
     separable_rank_ = rank;
@@ -80,7 +80,7 @@ public:
     output_maps_[std::hash<std::string>{}(name)] = image;
   }
 
-  GpuImagePtr get_cached(const std::string &name)
+  GpuImagePtr getCached(const std::string &name)
   {
     return output_maps_[std::hash<std::string>{}(name)];
   }
@@ -88,20 +88,20 @@ public:
 private:
   // void convolve(const ImageF &image, const KernelF &kernel, ImageF &output);
 
-  GpuKernelPtr kernels_[NUM_KERNELS];
+  GpuKernelPtr kernels_[NumKernels];
   // GpuImagePtr normalized_image_;
   // GpuImagePtr output_map_;
-  cuda::CudaConvolver convolvers_[NUM_KERNELS];
+  cuda::CudaConvolver convolvers_[NumKernels];
   // Opt-in separable convolvers. Constructed eagerly so
   // buildMap can dispatch without checking pointer state, but
   // they hold no device memory until configureKernels runs in
   // separable mode.
-  cuda::CudaSeparableConvolver sep_convolvers_[NUM_KERNELS];
+  cuda::CudaSeparableConvolver sep_convolvers_[NumKernels];
   bool use_separable_{false};
   int separable_rank_{-1};
-  GpuImagePtr convolved_images_[NUM_KERNELS];
+  GpuImagePtr convolved_images_[NumKernels];
   GpuImagePtr mean_;
-  GpuImagePtr diffs_[NUM_KERNELS * 2];
+  GpuImagePtr diffs_[NumKernels * 2];
   GpuImagePtr a_;
   GpuImagePtr b_;
   // Reused across frames; resize() is a no-op at constant resolution.

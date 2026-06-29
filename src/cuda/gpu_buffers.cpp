@@ -139,7 +139,7 @@ void GpuImage<T>::upload(const T *data, std::size_t size)
 }
 
 template <typename T>
-GpuImage<T> GpuImage<T>::from_cpu(const CpuImage<T> &other)
+GpuImage<T> GpuImage<T>::fromCpu(const CpuImage<T> &other)
 {
   GpuImage<T> image(other.width(), other.height());
   image.upload(other);
@@ -191,7 +191,7 @@ GpuKernel<T>::GpuKernel(const CpuKernel<T> &other)
 }
 
 template <typename T>
-GpuKernel<T> GpuKernel<T>::from_cpu(const CpuKernel<T> &other)
+GpuKernel<T> GpuKernel<T>::fromCpu(const CpuKernel<T> &other)
 {
   GpuKernel<T> kernel(other.width() / 2);
   kernel.upload(other);

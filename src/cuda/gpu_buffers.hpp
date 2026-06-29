@@ -62,7 +62,7 @@ public:
   void download(T *data, std::size_t size);
   void upload(const CpuImage<T> &other);
   void upload(const T *data, std::size_t size);
-  static GpuImage<T> from_cpu(const CpuImage<T> &other);
+  static GpuImage<T> fromCpu(const CpuImage<T> &other);
 
 private:
   bool initialized_;
@@ -77,7 +77,7 @@ class GpuKernel : public GpuImage<T>
 public:
   GpuKernel(int radius);
   GpuKernel(const CpuKernel<T> &other);
-  static GpuKernel<T> from_cpu(const CpuKernel<T> &other);
+  static GpuKernel<T> fromCpu(const CpuKernel<T> &other);
 };
 
 typedef GpuImage<float> GpuImageF32;

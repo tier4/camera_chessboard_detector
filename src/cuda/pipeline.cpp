@@ -41,10 +41,10 @@ void CudaLikelihoodEstimator::configureKernels(int radius, float angle1, float a
   for (int i = 0; i < 4; ++i)
   {
     const auto cpu_kernel = CpuKernelF32::geiger(radius, angle1, angle2, i);
-    set_kernel(i, std::make_shared<GpuKernelF32>(cpu_kernel));
+    setKernel(i, std::make_shared<GpuKernelF32>(cpu_kernel));
     if (use_separable_)
     {
-      sep_convolvers_[i].set_kernel(cpu_kernel, separable_rank_);
+      sep_convolvers_[i].setKernel(cpu_kernel, separable_rank_);
     }
     convolved_images_[i] = std::make_shared<GpuImageF32>();
     diffs_[i] = std::make_shared<GpuImageF32>();
@@ -143,7 +143,7 @@ CudaDetectorImpl::CudaDetectorImpl(
   {
     // use_separable must be set BEFORE configureKernels so the
     // estimator knows whether to populate sep_convolvers_ too.
-    estimators_[i].set_use_separable(use_separable, separable_rank);
+    estimators_[i].setUseSeparable(use_separable, separable_rank);
     estimators_[i].configureKernels(radius[i], angle1[i], angle2[i]);
   }
 }
@@ -208,7 +208,7 @@ CornerArray CudaDetectorImpl::runDetect(
   if (!gx_) gx_ = std::make_shared<GpuImageF32>();
   if (!gy_) gy_ = std::make_shared<GpuImageF32>();
   cuda::gradients(gx_, gy_, devimg);
-  refiner_.refine(devimg, gx_, gy_, corners, 10, cuda::CudaRefiner::REFINE_ALL);
+  refiner_.refine(devimg, gx_, gy_, corners, 10, cuda::CudaRefiner::RefineAll);
 #ifdef TIME_LOGGER
   end = TimeNow();
   std::cout << "Refinement time: " << TimeDiff(start, end) * 1e-3 << " ms" << std::endl;

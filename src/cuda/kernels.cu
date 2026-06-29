@@ -924,9 +924,9 @@ void CudaRefiner::refine(
   int radius, int refine_type
 )
 {
-  assert(refine_type <= REFINE_ALL);
-  bool redges = refine_type & REFINE_EDGES;
-  bool rcorners = refine_type & REFINE_CORNERS;
+  assert(refine_type <= RefineAll);
+  bool redges = refine_type & RefineEdges;
+  bool rcorners = refine_type & RefineCorners;
 
   GpuImagePtr corners_x = std::make_shared<GpuImageF32>();
   GpuImagePtr corners_y = std::make_shared<GpuImageF32>();
@@ -1093,7 +1093,7 @@ void likelihood(
   );
 }
 
-void score_gradient(CornerArray &corners, const GpuImagePtr &src, int radius)
+void scoreGradient(CornerArray &corners, const GpuImagePtr &src, int radius)
 {
   GpuImagePtr gx = sobel_x(src);
   GpuImagePtr gy = sobel_y(src);
@@ -1128,7 +1128,7 @@ void score_gradient(CornerArray &corners, const GpuImagePtr &src, int radius)
 }
 
 template <typename T>
-void bgr_to_gray(T *dst, const T *src, int width, int height, bool interleaved)
+void bgrToGray(T *dst, const T *src, int width, int height, bool interleaved)
 {
   dim3 block(32, 24);
   dim3 grid((width + block.x - 1) / block.x, (height + block.y - 1) / block.y);
@@ -1184,10 +1184,10 @@ void normalize(float *dst, const unsigned char *src, int width, int height)
   NVCHK(cudaFree(blocks_min));
 }
 
-template void bgr_to_gray<float>(
+template void bgrToGray<float>(
   float *dst, const float *src, int width, int height, bool interleaved
 );
-template void bgr_to_gray<unsigned char>(
+template void bgrToGray<unsigned char>(
   unsigned char *dst, const unsigned char *src, int width, int height, bool interleaved
 );
 

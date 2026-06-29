@@ -25,11 +25,11 @@ namespace cpu
 
 enum ConvolutionType {
   // Full convolution, including the border region.
-  CONVOLUTION_FULL,
+  ConvolutionFull,
   // Same size as the input image.
-  CONVOLUTION_SAME,
+  ConvolutionSame,
   // Only the region unaffected by the border.
-  CONVOLUTION_VALID
+  ConvolutionValid
 };
 
 // 2D correlation matching MATLAB's conv2() for the requested output mode.
