@@ -41,7 +41,7 @@ class CudaDetectorImpl;
 class CudaLikelihoodEstimator
 {
   enum {
-    NumKernels = 4,
+    NUM_KERNELS = 4,
   };
 
 public:
@@ -88,20 +88,20 @@ public:
 private:
   // void convolve(const ImageF &image, const KernelF &kernel, ImageF &output);
 
-  GpuKernelPtr kernels_[NumKernels];
+  GpuKernelPtr kernels_[NUM_KERNELS];
   // GpuImagePtr normalized_image_;
   // GpuImagePtr output_map_;
-  cuda::CudaConvolver convolvers_[NumKernels];
+  cuda::CudaConvolver convolvers_[NUM_KERNELS];
   // Opt-in separable convolvers. Constructed eagerly so
   // buildMap can dispatch without checking pointer state, but
   // they hold no device memory until configureKernels runs in
   // separable mode.
-  cuda::CudaSeparableConvolver sep_convolvers_[NumKernels];
+  cuda::CudaSeparableConvolver sep_convolvers_[NUM_KERNELS];
   bool use_separable_{false};
   int separable_rank_{-1};
-  GpuImagePtr convolved_images_[NumKernels];
+  GpuImagePtr convolved_images_[NUM_KERNELS];
   GpuImagePtr mean_;
-  GpuImagePtr diffs_[NumKernels * 2];
+  GpuImagePtr diffs_[NUM_KERNELS * 2];
   GpuImagePtr a_;
   GpuImagePtr b_;
   // Reused across frames; resize() is a no-op at constant resolution.

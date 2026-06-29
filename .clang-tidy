@@ -82,11 +82,11 @@ CheckOptions:
   - key: readability-identifier-naming.ConstantMemberPrefix
     value: k
 
-  # enum 値は PascalCase。k は付けない。
+  # enum 値は ALL_CAPS (SCREAMING_SNAKE_CASE)。
   - key: readability-identifier-naming.EnumConstantCase
-    value: CamelCase
+    value: UPPER_CASE
   - key: readability-identifier-naming.ScopedEnumConstantCase
-    value: CamelCase
+    value: UPPER_CASE
 
   # ローカル(自動変数)の const は lower_case を許容する。
   # k 接頭辞付き CamelCase は static / グローバル定数向けの規約であり、関数ローカルの

@@ -53,7 +53,7 @@ private:
 class CudaRefiner
 {
 public:
-  enum RefineType { RefineNone = 0, RefineEdges = 1, RefineCorners = 2, RefineAll = 3 };
+  enum RefineType { REFINE_NONE = 0, REFINE_EDGES = 1, REFINE_CORNERS = 2, REFINE_ALL = 3 };
 
   CudaRefiner();
   ~CudaRefiner();

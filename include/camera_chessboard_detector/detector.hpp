@@ -39,7 +39,7 @@ enum class ChessboardAccelerationMode {
   // products and applied as paired 1D horizontal + vertical convolutions.
   // `separable_rank <= 0` means "use full rank", which is mathematically
   // equivalent to the dense path up to floating-point precision.
-  CudaSeparable,
+  CUDA_SEPARABLE,
 };
 
 struct ChessboardDetectorConfig

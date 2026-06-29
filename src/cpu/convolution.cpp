@@ -29,7 +29,7 @@ Mat conv2(const Mat &img, const Mat &ikernel, ConvolutionType type)
   Mat kernel;
   flip(ikernel, kernel, -1);
   Mat source = img;
-  if (ConvolutionFull == type)
+  if (CONVOLUTION_FULL == type)
   {
     source = Mat();
     const int additional_rows = kernel.rows - 1;
@@ -42,7 +42,7 @@ Mat conv2(const Mat &img, const Mat &ikernel, ConvolutionType type)
   Point anchor(kernel.cols - kernel.cols / 2 - 1, kernel.rows - kernel.rows / 2 - 1);
   filter2D(source, dest, img.depth(), kernel, anchor, 0, BORDER_CONSTANT);
 
-  if (ConvolutionValid == type)
+  if (CONVOLUTION_VALID == type)
   {
     dest = dest.colRange((kernel.cols - 1) / 2, dest.cols - kernel.cols / 2)
              .rowRange((kernel.rows - 1) / 2, dest.rows - kernel.rows / 2);

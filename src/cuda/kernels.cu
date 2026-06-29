@@ -924,9 +924,9 @@ void CudaRefiner::refine(
   int radius, int refine_type
 )
 {
-  assert(refine_type <= RefineAll);
-  bool redges = refine_type & RefineEdges;
-  bool rcorners = refine_type & RefineCorners;
+  assert(refine_type <= REFINE_ALL);
+  bool redges = refine_type & REFINE_EDGES;
+  bool rcorners = refine_type & REFINE_CORNERS;
 
   GpuImagePtr corners_x = std::make_shared<GpuImageF32>();
   GpuImagePtr corners_y = std::make_shared<GpuImageF32>();

@@ -198,8 +198,8 @@ void CpuCornerDetector::computeGradientOrientation(
 
   sobel_kernel_trs = sobel_kernel.t();
 
-  img_du = conv2(img, sobel_kernel, ConvolutionSame);
-  img_dv = conv2(img, sobel_kernel_trs, ConvolutionSame);
+  img_du = conv2(img, sobel_kernel, CONVOLUTION_SAME);
+  img_dv = conv2(img, sobel_kernel_trs, CONVOLUTION_SAME);
 
   if (img_du.size() != img_dv.size()) return;
 
@@ -725,10 +725,10 @@ void CpuCornerDetector::buildLikelihoodMap(cv::Mat &src, cv::Mat &dst)
     );
 
     // correlate the image with the four quadrant kernels
-    resp_a = conv2(src, k_a, ConvolutionSame);
-    resp_b = conv2(src, k_b, ConvolutionSame);
-    resp_c = conv2(src, k_c, ConvolutionSame);
-    resp_d = conv2(src, k_d, ConvolutionSame);
+    resp_a = conv2(src, k_a, CONVOLUTION_SAME);
+    resp_b = conv2(src, k_b, CONVOLUTION_SAME);
+    resp_c = conv2(src, k_c, CONVOLUTION_SAME);
+    resp_d = conv2(src, k_d, CONVOLUTION_SAME);
 
     // compute mean
     mean_resp = (resp_a + resp_b + resp_c + resp_d) / 4.0;
@@ -787,7 +787,7 @@ void CpuCornerDetector::detect(
 
   computeGradientOrientation(normalized, grad_x, grad_y, angle_map, weight_map);
 
-  if (refinement_option == RefinementOption::DoRefine)
+  if (refinement_option == RefinementOption::DO_REFINE)
   {
     // subpixel refinement
     refineCornersSubpixel(corner_points_, grad_x, grad_y, angle_map, weight_map, kRefineRadiusPx);

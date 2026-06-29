@@ -113,7 +113,7 @@ int main(int argc, char **argv)
     int c_cpu = 0, c_cuda = 0, c_sep = 0;
     const double cpu = runMode(img, ccd::ChessboardAccelerationMode::CPU, warm, c_cpu);
     const double cuda = runMode(img, ccd::ChessboardAccelerationMode::CUDA, warm, c_cuda);
-    const double sep = runMode(img, ccd::ChessboardAccelerationMode::CudaSeparable, warm, c_sep);
+    const double sep = runMode(img, ccd::ChessboardAccelerationMode::CUDA_SEPARABLE, warm, c_sep);
 
     char res[32];
     std::snprintf(res, sizeof(res), "%dx%d", p.w, p.h);

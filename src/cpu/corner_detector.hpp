@@ -39,7 +39,7 @@ constexpr int kMatDepth = CV_32F;
 class CpuCornerDetector
 {
 public:
-  enum RefinementOption : bool { NoRefine = false, DoRefine = true };
+  enum RefinementOption : bool { NO_REFINE = false, DO_REFINE = true };
 
   CpuCornerDetector();
   ~CpuCornerDetector();
@@ -47,7 +47,7 @@ public:
 
   void detect(
     cv::Mat &src, CornerCandidates &mcorners, RealT score_threshold,
-    RefinementOption refinement_option = DoRefine
+    RefinementOption refinement_option = DO_REFINE
   );
 
 private:

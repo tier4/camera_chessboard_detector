@@ -335,7 +335,7 @@ bool ChessboardDetector::detectChessboards(const cv::Mat &image, ChessboardDetec
   bool has_boards = false;
 
   if (config_.acceleration == ChessboardAccelerationMode::CUDA ||
-      config_.acceleration == ChessboardAccelerationMode::CudaSeparable)
+      config_.acceleration == ChessboardAccelerationMode::CUDA_SEPARABLE)
   {
 #ifdef CUDA_ENABLED
     if (isCudaAvailable())
@@ -453,8 +453,8 @@ bool ChessboardDetector::detectChessboardsCpu(const cv::Mat &image, Chessboard2d
 #endif
 
   cpu::CpuCornerDetector corner_detector(image_view);
-  const auto refine_option = config_.refine ? cpu::CpuCornerDetector::RefinementOption::DoRefine
-                                            : cpu::CpuCornerDetector::RefinementOption::NoRefine;
+  const auto refine_option = config_.refine ? cpu::CpuCornerDetector::RefinementOption::DO_REFINE
+                                            : cpu::CpuCornerDetector::RefinementOption::NO_REFINE;
 
   cpu::CornerCandidates corners;
   corner_detector.detect(image_view, corners, config_.score_threshold, refine_option);
@@ -557,7 +557,7 @@ bool ChessboardDetector::detectChessboardsCuda(const cv::Mat &image, Chessboard2
                                static_cast<float>(CV_PI) / 2.0f, -static_cast<float>(CV_PI) / 4.0f,
                                static_cast<float>(CV_PI) / 2.0f, -static_cast<float>(CV_PI) / 4.0f};
 
-  const bool use_separable = config_.acceleration == ChessboardAccelerationMode::CudaSeparable;
+  const bool use_separable = config_.acceleration == ChessboardAccelerationMode::CUDA_SEPARABLE;
   // Build the GPU corner detector (six likelihood estimators, their kernels and
   // device scratch buffers) once and reuse it across frames. Constructing it per
   // call rebuilt every kernel and forced a device allocation each frame; since

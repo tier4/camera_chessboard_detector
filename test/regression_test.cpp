@@ -383,7 +383,7 @@ constexpr double kSeparableParityTolPx = 1.0;  // FP accumulation in 2 passes
 TEST(SeparableFullRank, SyntheticAccuracy)
 {
   std::vector<Pt> c;
-  if (!detect(synthetic().image, fb::ChessboardAccelerationMode::CudaSeparable, c, -1))
+  if (!detect(synthetic().image, fb::ChessboardAccelerationMode::CUDA_SEPARABLE, c, -1))
   {
     GTEST_SKIP() << "CUDA pipeline unavailable";
   }
@@ -406,7 +406,7 @@ TEST(SeparableFullRank, SampleMatchesCudaDense)
   {
     GTEST_SKIP() << "CUDA dense pipeline unavailable";
   }
-  if (!detect(img, fb::ChessboardAccelerationMode::CudaSeparable, separable, -1))
+  if (!detect(img, fb::ChessboardAccelerationMode::CUDA_SEPARABLE, separable, -1))
   {
     GTEST_SKIP() << "CUDA separable pipeline unavailable";
   }
@@ -424,7 +424,7 @@ TEST(SeparableFullRank, SyntheticMatchesCudaDense)
   {
     GTEST_SKIP() << "CUDA dense pipeline unavailable";
   }
-  if (!detect(synthetic().image, fb::ChessboardAccelerationMode::CudaSeparable, separable, -1))
+  if (!detect(synthetic().image, fb::ChessboardAccelerationMode::CUDA_SEPARABLE, separable, -1))
   {
     GTEST_SKIP() << "CUDA separable pipeline unavailable";
   }

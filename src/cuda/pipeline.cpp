@@ -208,7 +208,7 @@ CornerArray CudaDetectorImpl::runDetect(
   if (!gx_) gx_ = std::make_shared<GpuImageF32>();
   if (!gy_) gy_ = std::make_shared<GpuImageF32>();
   cuda::gradients(gx_, gy_, devimg);
-  refiner_.refine(devimg, gx_, gy_, corners, 10, cuda::CudaRefiner::RefineAll);
+  refiner_.refine(devimg, gx_, gy_, corners, 10, cuda::CudaRefiner::REFINE_ALL);
 #ifdef TIME_LOGGER
   end = TimeNow();
   std::cout << "Refinement time: " << TimeDiff(start, end) * 1e-3 << " ms" << std::endl;
