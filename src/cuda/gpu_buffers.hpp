@@ -69,6 +69,10 @@ private:
   int width_;
   int height_;
   T *data_;
+  // Retain storage when the logical image changes aspect or becomes smaller.
+  // Startup preparation can then reserve a maximum image without reallocating
+  // every intermediate buffer on the first camera frame.
+  std::size_t capacity_{0};
 };
 
 template <typename T>

@@ -40,6 +40,7 @@ GpuImage<T>::GpuImage(int width, int height)
   width_ = width;
   height_ = height;
   NVCHK(cudaMalloc(&data_, width * height * sizeof(T)));
+  capacity_ = static_cast<std::size_t>(width) * height;
   fill(0);
   initialized_ = true;
 }
@@ -61,12 +62,18 @@ bool GpuImage<T>::resize(int width, int height)
 
   width_ = width;
   height_ = height;
-  if (data_ != nullptr)
+  const std::size_t required = static_cast<std::size_t>(width) * height;
+  if (required > capacity_)
   {
-    NVCHK(cudaFree(data_));
-    data_ = nullptr;
+    if (data_ != nullptr)
+    {
+      NVCHK(cudaFree(data_));
+      data_ = nullptr;
+    }
+    NVCHK(cudaMalloc(&data_, required * sizeof(T)));
+    capacity_ = required;
   }
-  NVCHK(cudaMalloc(&data_, width * height * sizeof(T)));
+  // Preserve resize's clearing semantics even when reusing the allocation.
   fill(0);
   return true;
 }

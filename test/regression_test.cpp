@@ -446,3 +446,52 @@ TEST(Fixture, EmitSyntheticImage)
   ASSERT_TRUE(cv::imwrite(path, synthetic().image)) << "imwrite failed: " << path;
   GTEST_SKIP() << "emitted " << path;
 }
+
+TEST(Regression, ReusedCudaPipelineMatchesFreshAcrossImageShapes)
+{
+  const auto pattern = makeSyntheticBoard(10, 8, 40, 50).image;
+  for (const auto mode :
+       {fb::ChessboardAccelerationMode::CUDA, fb::ChessboardAccelerationMode::CUDA_SEPARABLE})
+  {
+    fb::ChessboardDetectorConfig config;
+    config.acceleration = mode;
+    config.separable_rank = 1;
+    fb::ChessboardDetector reused(fb::ChessboardModel{}, config);
+    for (const auto size :
+         {cv::Size(1280, 960), cv::Size(960, 1280), cv::Size(640, 480), cv::Size(640, 480),
+          cv::Size(1440, 900), cv::Size(1280, 720), cv::Size(800, 600)})
+    {
+      SCOPED_TRACE(
+        std::to_string(static_cast<int>(mode)) + ":" + std::to_string(size.width) + "x" +
+        std::to_string(size.height)
+      );
+      cv::Mat image(size, pattern.type(), cv::Scalar::all(255));
+      pattern.copyTo(image(cv::Rect(
+        (size.width - pattern.cols) / 2, (size.height - pattern.rows) / 2, pattern.cols,
+        pattern.rows
+      )));
+      fb::ChessboardDetector fresh(fb::ChessboardModel{}, config);
+      fb::ChessboardDetection expected, actual;
+      if (!fresh.detectChessboards(image, expected))
+      {
+        // The existing suite supports builds without CUDA.
+        std::vector<Pt> available;
+        if (!detect(synthetic().image, mode, available, 1))
+        {
+          GTEST_SKIP() << "CUDA pipeline unavailable";
+        }
+        FAIL() << "Fresh pipeline failed the padded synthetic board";
+      }
+      ASSERT_TRUE(reused.detectChessboards(image, actual));
+      std::vector<Pt> reference, observed;
+      for (const auto &board : expected.boards)
+        for (const auto &p : board.corners2d) reference.push_back({p.x, p.y});
+      for (const auto &board : actual.boards)
+        for (const auto &p : board.corners2d) observed.push_back({p.x, p.y});
+      ASSERT_EQ(reference.size(), 63u);
+      const double difference = setMatchMaxDist(reference, observed, 0.0001);
+      EXPECT_GE(difference, 0.0);
+      EXPECT_LE(difference, 0.0001);
+    }
+  }
+}
