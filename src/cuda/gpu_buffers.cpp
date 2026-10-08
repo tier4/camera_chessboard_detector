@@ -27,14 +27,6 @@ namespace cuda
 {
 
 template <typename T>
-GpuImage<T>::GpuImage()
-{
-  width_ = 0;
-  height_ = 0;
-  data_ = nullptr;
-}
-
-template <typename T>
 GpuImage<T>::GpuImage(int width, int height)
 {
   width_ = width;
@@ -42,7 +34,6 @@ GpuImage<T>::GpuImage(int width, int height)
   NVCHK(cudaMalloc(&data_, width * height * sizeof(T)));
   capacity_ = static_cast<std::size_t>(width) * height;
   fill(0);
-  initialized_ = true;
 }
 
 template <typename T>
@@ -94,7 +85,7 @@ std::size_t GpuImage<T>::size() const
 template <typename T>
 bool GpuImage<T>::valid() const
 {
-  return initialized_;
+  return data_ != nullptr;
 }
 
 template <typename T>
@@ -146,14 +137,6 @@ void GpuImage<T>::upload(const T *data, std::size_t size)
 }
 
 template <typename T>
-GpuImage<T> GpuImage<T>::fromCpu(const CpuImage<T> &other)
-{
-  GpuImage<T> image(other.width(), other.height());
-  image.upload(other);
-  return image;
-}
-
-template <typename T>
 GpuKernel<T>::GpuKernel(int radius) : GpuImage<T>(2 * radius + 1, 2 * radius + 1)
 {
 }
@@ -195,14 +178,6 @@ GpuKernel<T>::GpuKernel(const CpuKernel<T> &other)
 {
   this->upload(other);
 #endif
-}
-
-template <typename T>
-GpuKernel<T> GpuKernel<T>::fromCpu(const CpuKernel<T> &other)
-{
-  GpuKernel<T> kernel(other.width() / 2);
-  kernel.upload(other);
-  return kernel;
 }
 
 template class GpuImage<float>;
