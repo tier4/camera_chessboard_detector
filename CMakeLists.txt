@@ -149,6 +149,16 @@ if(CCD_BUILD_TESTS)
     CCD_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test/golden")
   add_test(NAME camera_chessboard_detector_regression COMMAND camera_chessboard_detector_regression_test)
 
+  if(CCD_WITH_CUDA)
+    # Unit tests for the internal CUDA buffer owner, so they include from src/.
+    add_executable(camera_chessboard_detector_gpu_buffers_test test/gpu_buffers_test.cpp)
+    target_include_directories(camera_chessboard_detector_gpu_buffers_test PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    target_link_libraries(camera_chessboard_detector_gpu_buffers_test
+      camera_chessboard_detector CUDA::cudart GTest::gtest GTest::gtest_main)
+    add_test(NAME camera_chessboard_detector_gpu_buffers COMMAND camera_chessboard_detector_gpu_buffers_test)
+  endif()
+
   add_executable(camera_chessboard_detector_benchmark test/benchmark.cpp)
   target_link_libraries(camera_chessboard_detector_benchmark
     camera_chessboard_detector ${OpenCV_LIBRARIES})

@@ -40,11 +40,16 @@ template <typename T>
 class GpuImage
 {
 public:
-  GpuImage();
+  GpuImage() = default;
   GpuImage(int width, int height);
   // GpuImage(int width, int height, T *data);
   // GpuImage(GpuImage<T> &&other);
   ~GpuImage();
+
+  // Owns a raw device allocation: a copy would share the pointer and free it
+  // twice. Share an instance through GpuImagePtr instead.
+  GpuImage(const GpuImage &) = delete;
+  GpuImage &operator=(const GpuImage &) = delete;
 
   bool resize(int width, int height);
   void fill(T value);
@@ -62,13 +67,11 @@ public:
   void download(T *data, std::size_t size);
   void upload(const CpuImage<T> &other);
   void upload(const T *data, std::size_t size);
-  static GpuImage<T> fromCpu(const CpuImage<T> &other);
 
 private:
-  bool initialized_;
-  int width_;
-  int height_;
-  T *data_;
+  int width_{0};
+  int height_{0};
+  T *data_{nullptr};
   // Retain storage when the logical image changes aspect or becomes smaller.
   // Startup preparation can then reserve a maximum image without reallocating
   // every intermediate buffer on the first camera frame.
@@ -81,7 +84,6 @@ class GpuKernel : public GpuImage<T>
 public:
   GpuKernel(int radius);
   GpuKernel(const CpuKernel<T> &other);
-  static GpuKernel<T> fromCpu(const CpuKernel<T> &other);
 };
 
 typedef GpuImage<float> GpuImageF32;
